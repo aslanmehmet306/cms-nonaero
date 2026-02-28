@@ -1,0 +1,12 @@
+{
+  "name": "@airport-revenue/portal",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Portal not implemented yet - Phase 7+'",
+    "build": "echo 'Portal not implemented yet'"
+  },
+  "dependencies": {
+    "@airport-revenue/shared-types": "workspace:*"
+  }
+}

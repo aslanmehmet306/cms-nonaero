@@ -1,0 +1,11 @@
+{
+  "extends": "../../packages/tsconfig/react.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "paths": {
+      "@shared-types/*": ["../../packages/shared-types/src/*"],
+      "@shared-types": ["../../packages/shared-types/src"]
+    }
+  },
+  "include": ["src"]
+}
