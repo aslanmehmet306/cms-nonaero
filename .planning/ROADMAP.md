@@ -41,7 +41,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Turborepo monorepo scaffold + Docker Compose + complete Prisma schema with 20+ models + ADB seed data
+- [x] 01-01-PLAN.md — Turborepo monorepo scaffold + Docker Compose + complete Prisma schema with 20+ models + ADB seed data
 - [ ] 01-02-PLAN.md — JWT auth with refresh rotation + RBAC guards (7 roles, separation of duties) + Decimal.js precision utility + PrismaService
 - [ ] 01-03-PLAN.md — React Admin shell (Vite) + Portal stub + Prettier/ESLint code quality tooling
 - [ ] 01-04-PLAN.md — Audit trail module (interceptor + before/after snapshots) + Health endpoints (DB/Redis) + Swagger/OpenAPI documentation
@@ -202,7 +202,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Infrastructure | 0/4 | Planning complete | - |
+| 1. Foundation & Infrastructure | 1/4 | In Progress | - |
 | 2. Master Data & Formula Engine | 0/TBD | Not started | - |
 | 3. Contract Domain | 0/TBD | Not started | - |
 | 4. Obligation & Declaration | 0/TBD | Not started | - |
