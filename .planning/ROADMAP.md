@@ -38,11 +38,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   6. Health endpoints return green status when DB and Redis are reachable, red when unavailable
   7. Swagger UI at /api/docs displays all endpoints with request/response schemas
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Turborepo monorepo scaffold + Docker Compose + complete Prisma schema with 20+ models + ADB seed data
+- [ ] 01-02-PLAN.md — JWT auth with refresh rotation + RBAC guards (7 roles, separation of duties) + Decimal.js precision utility + PrismaService
+- [ ] 01-03-PLAN.md — React Admin shell (Vite) + Portal stub + Prettier/ESLint code quality tooling
+- [ ] 01-04-PLAN.md — Audit trail module (interceptor + before/after snapshots) + Health endpoints (DB/Redis) + Swagger/OpenAPI documentation
 
 ### Phase 2: Master Data & Formula Engine
 **Goal**: Deliver the master data foundation (airports, areas, tenants, services) and a secure, sandboxed formula engine that enables flexible pricing expressions without code injection risk.
@@ -200,7 +202,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Infrastructure | 0/TBD | Not started | - |
+| 1. Foundation & Infrastructure | 0/4 | Planning complete | - |
 | 2. Master Data & Formula Engine | 0/TBD | Not started | - |
 | 3. Contract Domain | 0/TBD | Not started | - |
 | 4. Obligation & Declaration | 0/TBD | Not started | - |
