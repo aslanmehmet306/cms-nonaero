@@ -7,6 +7,7 @@
 ## Research Context & Limitations
 
 **IMPORTANT:** This research was conducted without access to Context7 or web search tools due to permission restrictions. All findings are based on:
+
 - Training data knowledge (cutoff: January 2025)
 - General billing SaaS architecture patterns
 - Project-specific requirements from PROJECT.md
@@ -57,6 +58,7 @@
 ```
 
 **Rationale for Modular Monolith:**
+
 - **Solo developer context:** Microservices add operational complexity (deployment, monitoring, service discovery) that's unjustified without a team
 - **Shared transaction boundaries:** Contract → Obligation generation needs ACID guarantees
 - **Simpler debugging:** Single process, unified logs, synchronous stack traces
@@ -72,6 +74,7 @@
 **Responsibility:** Manage contract lifecycle and enforce business rules
 
 **Owns:**
+
 - Contract entities (draft → published → active → amended/terminated)
 - Contract versioning (amendments create new versions, old versions archived)
 - Service definitions (rent, revenue share, utility, service charge)
@@ -79,11 +82,13 @@
 - Area/unit allocation (which tenant occupies which space)
 
 **Communicates With:**
+
 - **Obligation Domain:** Triggers obligation schedule generation on contract publish
 - **Billing Domain:** Provides contract snapshots for deterministic billing
 - **Audit Domain:** Logs all state transitions and amendments
 
 **Data Model:**
+
 ```typescript
 Contract {
   id, airport_id, tenant_id, status, version,
@@ -99,6 +104,7 @@ Service {
 ```
 
 **Key Patterns:**
+
 - **State Machine:** Use state machine library (e.g., XState or simple enum-based) to enforce valid transitions
 - **Event Sourcing Lite:** Emit `ContractPublished`, `ContractAmended` events (not full event sourcing, just domain events)
 - **Immutability:** Published contracts are immutable; amendments create new versions
@@ -110,6 +116,7 @@ Service {
 **Responsibility:** Schedule and calculate charges based on contracts
 
 **Owns:**
+
 - Obligation schedule (monthly/quarterly/annual recurring items)
 - Formula evaluation engine (math.js sandbox)
 - Calculation inputs (revenue declarations, meter readings, indices)
@@ -117,12 +124,14 @@ Service {
 - MAG settlement logic (monthly higher-of, year-end true-up)
 
 **Communicates With:**
+
 - **Contract Domain:** Reads contract services to generate obligations
 - **Billing Domain:** Provides calculated obligation amounts for invoicing
 - **Revenue Declaration Module:** Ingests tenant-submitted revenue data
 - **Meter Reading Module:** Ingests utility consumption data
 
 **Data Model:**
+
 ```typescript
 Obligation {
   id, contract_id, service_id, airport_id, tenant_id,
@@ -144,6 +153,7 @@ MeterReading {
 ```
 
 **Key Patterns:**
+
 - **Formula Sandbox:** Use math.js with `evaluate()` in a restricted scope (whitelist allowed functions, no access to process/fs)
 - **Determinism:** Store formula + inputs in obligation record so recalculation yields same result
 - **Deduplication:** Hash contract_id + service_id + period to detect duplicates (line_hash)
@@ -156,6 +166,7 @@ MeterReading {
 **Responsibility:** Orchestrate billing runs and manage billing state
 
 **Owns:**
+
 - Billing run entities (tracks run status, progress, errors)
 - Tenant-level granularity (run all tenants, or specific tenant for delta re-run)
 - Contract snapshot creation (freeze contract state at run start)
@@ -163,12 +174,14 @@ MeterReading {
 - State machine (pending → running → completed/failed)
 
 **Communicates With:**
+
 - **Obligation Domain:** Fetches calculated obligations for the billing period
 - **Invoice Domain:** Triggers invoice generation after obligations are finalized
 - **BullMQ:** Enqueues billing jobs, handles retries, tracks progress
 - **Notification Domain:** Sends progress updates (SSE) to admin UI
 
 **Data Model:**
+
 ```typescript
 BillingRun {
   id, airport_id, billing_period_month, status,
@@ -184,6 +197,7 @@ BillingRunLine {
 ```
 
 **Key Patterns:**
+
 - **Queue-Based Orchestration:**
   ```
   BillingRunController → BillingRunService.start()
@@ -206,6 +220,7 @@ BillingRunLine {
 **Responsibility:** Generate invoices and integrate with payment providers
 
 **Owns:**
+
 - Invoice entities (line items, totals, status)
 - Provider-agnostic adapter pattern (Stripe now, ERP later)
 - Invoice PDF generation (optional for v1, Stripe handles this)
@@ -213,12 +228,14 @@ BillingRunLine {
 - Email notifications (invoice created, payment received)
 
 **Communicates With:**
+
 - **Billing Domain:** Receives billing run results
 - **Stripe API:** Creates Stripe invoices via adapter
 - **Email Service:** Sends invoice notifications
 - **Audit Domain:** Logs invoice creation and payment events
 
 **Data Model:**
+
 ```typescript
 Invoice {
   id, airport_id, tenant_id, billing_run_id,
@@ -246,6 +263,7 @@ StripeInvoiceAdapter implements InvoiceProvider {
 ```
 
 **Key Patterns:**
+
 - **Adapter Pattern:** Abstract provider interface allows switching from Stripe to ERP without changing domain logic
 - **Webhook Integration:** Stripe sends payment status webhooks → update invoice.status
 - **Async Email:** Use BullMQ to send emails (don't block invoice creation)
@@ -258,40 +276,44 @@ StripeInvoiceAdapter implements InvoiceProvider {
 **Responsibility:** Safely evaluate pricing formulas
 
 **Owns:**
+
 - Expression parsing and validation
 - Sandboxed execution environment
 - Variable substitution
 - Error handling for invalid expressions
 
 **Integration:**
+
 - **Library:** math.js (`evaluate()` method)
 - **Sandbox:** Create isolated scope with only allowed variables/functions
 - **Validation:** Parse formula on save, reject invalid syntax before contract publish
 
 **Example:**
+
 ```typescript
 // Formula definition (stored in Service)
-formula: "base_rent * (1 + index_rate/100) * area_sqm"
+formula: 'base_rent * (1 + index_rate/100) * area_sqm';
 
 // Evaluation context (from Obligation)
 context = {
   base_rent: 100,
   index_rate: 5.2,
-  area_sqm: 250
-}
+  area_sqm: 250,
+};
 
 // Execution
-import { evaluate } from 'mathjs'
-const result = evaluate(formula, context) // 26300
+import { evaluate } from 'mathjs';
+const result = evaluate(formula, context); // 26300
 
 // Security: whitelist scope
 const scope = {
   ...context,
   // No access to Math, process, require, etc.
-}
+};
 ```
 
 **Key Patterns:**
+
 - **Whitelist Approach:** Only inject known variables (base_rent, area_sqm, etc.), reject attempts to access globals
 - **Formula Versioning:** Store formula snapshot in obligation so changes to service definition don't affect past calculations
 - **Validation on Save:** Test-evaluate formula with dummy data before allowing contract publish
@@ -303,11 +325,13 @@ const scope = {
 **Responsibility:** Ensure airport-level and tenant-level data separation
 
 **Owns:**
+
 - Row-Level Security (RLS) policies in PostgreSQL
 - Tenant context injection (NestJS middleware)
 - Query filtering by airport_id/tenant_id
 
 **Patterns:**
+
 ```typescript
 // NestJS Guard extracts tenant context from JWT
 @Injectable()
@@ -343,6 +367,7 @@ CREATE POLICY tenant_isolation ON contracts
 ```
 
 **Key Patterns:**
+
 - **Request-Level Context:** Extract tenant context early (middleware/guard), propagate through service layers
 - **Repository Pattern:** Centralize filtering logic in repositories to avoid scattered WHERE clauses
 - **Defense in Depth:** Application-level filtering + database-level RLS
@@ -374,6 +399,7 @@ For each service in contract:
 ```
 
 **Key Considerations:**
+
 - **Transactional Boundary:** Contract status update + event emit in same transaction
 - **Event-Driven:** Use NestJS EventEmitter or simple pub/sub to decouple domains
 - **Synchronous vs Async:** For MVP, synchronous obligation generation is fine (< 1s for most contracts). Switch to async if contract has 100+ services.
@@ -418,6 +444,7 @@ NotificationService sends email to admin
 ```
 
 **Key Considerations:**
+
 - **Job Granularity:** One job per billing run (not per tenant). Tenant loop inside worker for transactional atomicity.
 - **Progress Updates:** Use Redis pub/sub or SSE to stream progress to UI
 - **Error Handling:** Log errors in BillingRunLine.error, mark run as 'partial' if some tenants fail
@@ -453,6 +480,7 @@ EmailWorker sends notification to tenant
 ```
 
 **Key Considerations:**
+
 - **Stripe Customer Mapping:** One Stripe customer per tenant (not per contract)
 - **Idempotency:** Use invoice.id as Stripe idempotency key
 - **Webhook Handling:** Separate controller for Stripe webhooks → updates invoice.status on payment
@@ -479,6 +507,7 @@ ObligationService recalculates MAG obligations for affected tenants
 ```
 
 **Key Considerations:**
+
 - **Validation:** Check tenant existence, period validity, currency match before insert
 - **Upsert Logic:** If declaration for tenant+period already exists, update (not insert)
 - **MAG Settlement:** Revenue share and MAG obligations depend on revenue declarations; recalculation triggered by event
@@ -502,12 +531,14 @@ draft ──publish()──> published ──activate()──> active
 ```
 
 **Transitions:**
+
 - `draft → published`: Validate formula syntax, area assignments
 - `published → active`: Effective date reached (cron job checks daily)
 - `active → amended`: Create new contract version, old version archived
 - `active → terminated`: Set effective_to, stop generating obligations
 
 **Events Emitted:**
+
 - `ContractPublished` → triggers obligation schedule generation
 - `ContractActivated` → no immediate action (informational)
 - `ContractAmended` → triggers delta obligation generation for new terms
@@ -528,12 +559,14 @@ pending ──start()──> running ──complete()──> completed
 ```
 
 **Transitions:**
+
 - `pending → running`: BullMQ job starts
 - `running → completed`: All tenants processed successfully
 - `running → failed`: Unrecoverable error (e.g., database down)
 - `failed → running`: Manual retry by admin
 
 **Events Emitted:**
+
 - `BillingRunStarted` → logs event
 - `BillingRunCompleted` → sends email to admin, updates dashboard
 - `BillingRunFailed` → sends alert email to admin
@@ -551,11 +584,13 @@ scheduled ──calculate()──> calculated ──invoice()──> invoiced
 ```
 
 **Transitions:**
+
 - `scheduled → calculated`: Formula evaluated, amount stored
 - `calculated → invoiced`: Included in billing run, invoice created
 - `calculated → calculated`: Revenue declaration updated, recalculation triggered
 
 **Events Emitted:**
+
 - `ObligationCalculated` → logs calculation lineage (formula + inputs)
 - `ObligationInvoiced` → locks obligation (no further recalculation)
 
@@ -564,21 +599,25 @@ scheduled ──calculate()──> calculated ──invoice()──> invoiced
 ## Suggested Build Order (Dependency Analysis)
 
 ### Phase 1: Foundation (no dependencies)
+
 1. **Database schema** (Prisma migrations)
 2. **Multi-tenant context** (NestJS guard + middleware)
 3. **Audit trail module** (logs all entity changes)
 
 ### Phase 2: Master Data (depends on Phase 1)
+
 4. **Airport/area hierarchy** (terminal > floor > zone > unit)
 5. **Tenant management** (with Stripe customer sync)
 6. **Service definitions** (rent, revenue share, utility types)
 
 ### Phase 3: Contract Domain (depends on Phase 2)
+
 7. **Contract CRUD** (draft/publish/amend/terminate state machine)
 8. **Formula engine** (math.js sandbox + validation)
 9. **Contract versioning** (amendment creates new version)
 
 ### Phase 4: Obligation Domain (depends on Phase 3)
+
 10. **Obligation schedule generation** (triggered by contract publish)
 11. **Revenue declaration module** (CSV upload)
 12. **Meter reading module** (manual entry for v1)
@@ -586,30 +625,35 @@ scheduled ──calculate()──> calculated ──invoice()──> invoiced
 14. **Proration logic** (mid-period contract starts)
 
 ### Phase 5: Billing Domain (depends on Phase 4)
+
 15. **BullMQ setup** (Redis queue configuration)
 16. **Billing run orchestration** (run creation, worker processing)
 17. **Contract snapshot** (JSONB freeze at run start)
 18. **Progress tracking** (SSE for real-time updates)
 
 ### Phase 6: Invoice Domain (depends on Phase 5)
+
 19. **Invoice generation** (from billing run results)
 20. **Stripe adapter** (invoice creation, payment sync)
 21. **Webhook handling** (payment status updates)
 22. **Email notifications** (async via BullMQ)
 
 ### Phase 7: Admin UI (depends on all)
+
 23. **Dashboard** (KPIs, recent activity)
 24. **Contract management** (CRUD + state transitions)
 25. **Billing operations** (trigger runs, view progress)
 26. **Invoice list** (view, resend, void)
 
 **Rationale:**
+
 - **Bottom-up dependencies:** Can't build contracts without tenants, can't build billing without obligations
 - **Formula engine early:** Needed for contract validation before publish
 - **Async infrastructure mid-phase:** BullMQ needed before billing runs, but not for contract/obligation setup
 - **UI last:** Backend API can be tested with Postman/curl while UI is in progress
 
 **Parallel Work Opportunities (solo developer still valuable for context switching):**
+
 - Phase 2 (master data) modules are independent (airport, tenant, service can be built in any order)
 - Phase 4 (obligation) modules: Revenue declaration and meter reading are independent
 - Phase 7 (UI): Dashboard and contract UI can be built in parallel if API is ready
@@ -618,16 +662,17 @@ scheduled ──calculate()──> calculated ──invoice()──> invoiced
 
 ## Scalability Considerations
 
-| Concern | At 10 Airports, 100 Tenants | At 100 Airports, 1K Tenants | At 1K Airports, 10K Tenants |
-|---------|------------------------------|------------------------------|-----------------------------|
-| **Database** | Single PostgreSQL instance (Supabase/Railway free tier) | Vertical scaling (4-8 vCPU, 16-32GB RAM) | Read replicas for reports; consider partitioning by airport_id |
-| **Billing Runs** | Synchronous (< 1 min) | BullMQ with 2-4 workers (< 10 min) | BullMQ with 10+ workers; consider per-airport queue sharding |
-| **Formula Evaluation** | In-process math.js | Same (CPU-bound, not I/O) | Consider V8 isolates for true sandboxing (Cloudflare Workers pattern) |
-| **File Storage** | Local filesystem (revenue CSVs) | S3-compatible (Supabase Storage) | Same; add CDN for invoice PDFs |
-| **Multi-Tenant Isolation** | Row-level filtering | Same + RLS policies | Consider schema-per-airport for large tenants (rare) |
-| **Caching** | Redis for sessions only | Add Redis cache for contract/obligation lookups | Same; consider separate cache per airport |
+| Concern                    | At 10 Airports, 100 Tenants                             | At 100 Airports, 1K Tenants                     | At 1K Airports, 10K Tenants                                           |
+| -------------------------- | ------------------------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------- |
+| **Database**               | Single PostgreSQL instance (Supabase/Railway free tier) | Vertical scaling (4-8 vCPU, 16-32GB RAM)        | Read replicas for reports; consider partitioning by airport_id        |
+| **Billing Runs**           | Synchronous (< 1 min)                                   | BullMQ with 2-4 workers (< 10 min)              | BullMQ with 10+ workers; consider per-airport queue sharding          |
+| **Formula Evaluation**     | In-process math.js                                      | Same (CPU-bound, not I/O)                       | Consider V8 isolates for true sandboxing (Cloudflare Workers pattern) |
+| **File Storage**           | Local filesystem (revenue CSVs)                         | S3-compatible (Supabase Storage)                | Same; add CDN for invoice PDFs                                        |
+| **Multi-Tenant Isolation** | Row-level filtering                                     | Same + RLS policies                             | Consider schema-per-airport for large tenants (rare)                  |
+| **Caching**                | Redis for sessions only                                 | Add Redis cache for contract/obligation lookups | Same; consider separate cache per airport                             |
 
 **When to Extract Microservices:**
+
 - **Billing Worker:** If billing runs > 1 hour, extract to dedicated service with horizontal scaling
 - **Formula Engine:** If formula evaluation becomes CPU bottleneck, extract to FaaS (AWS Lambda, Cloudflare Workers)
 - **Invoice Provider:** If ERP integration requires VPN/firewall, extract to separate service in private network
@@ -637,8 +682,10 @@ scheduled ──calculate()──> calculated ──invoice()──> invoiced
 ## Anti-Patterns to Avoid
 
 ### Anti-Pattern 1: Billing Run as Cron Job
+
 **What:** Run billing as a cron job that queries all tenants and generates invoices synchronously.
 **Why bad:**
+
 - No progress tracking (all-or-nothing)
 - Hard to retry failed tenants (must re-run entire batch)
 - Blocks server if run is long
@@ -649,8 +696,10 @@ scheduled ──calculate()──> calculated ──invoice()──> invoiced
 ---
 
 ### Anti-Pattern 2: Storing Calculated Amounts Without Lineage
+
 **What:** Store obligation.amount but not the formula/inputs used to calculate it.
 **Why bad:**
+
 - Can't reproduce calculation (audit nightmare)
 - Can't debug why tenant was charged X
 - Can't recalculate if formula changes (no snapshot)
@@ -660,8 +709,10 @@ scheduled ──calculate()──> calculated ──invoice()──> invoiced
 ---
 
 ### Anti-Pattern 3: Tenant-Scoped Database (Schema Per Tenant)
+
 **What:** Create separate PostgreSQL schema for each tenant.
 **Why bad:**
+
 - Migration complexity (run migrations × N tenants)
 - Connection pool exhaustion (PostgreSQL has max_connections limit)
 - Hard to query across tenants (reporting)
@@ -672,8 +723,10 @@ scheduled ──calculate()──> calculated ──invoice()──> invoiced
 ---
 
 ### Anti-Pattern 4: Hard-Coded Stripe Logic in Invoice Domain
+
 **What:** Directly call Stripe SDK in InvoiceService without abstraction.
 **Why bad:**
+
 - Impossible to switch to ERP integration later (vendor lock-in)
 - Hard to test (can't mock Stripe API easily)
 - Couples domain logic to infrastructure
@@ -683,8 +736,10 @@ scheduled ──calculate()──> calculated ──invoice()──> invoiced
 ---
 
 ### Anti-Pattern 5: Mutable Published Contracts
+
 **What:** Allow editing contract.formula after contract is published.
 **Why bad:**
+
 - Past billing runs become non-reproducible (formula changed)
 - Audit trail breaks (can't prove what was billed)
 - Disputes impossible to resolve (no snapshot of original terms)
@@ -694,8 +749,10 @@ scheduled ──calculate()──> calculated ──invoice()──> invoiced
 ---
 
 ### Anti-Pattern 6: Global Formula Scope
+
 **What:** Allow formulas to access global variables (Math, process, require, etc.).
 **Why bad:**
+
 - Security risk (code injection: `process.exit()`, `require('fs').writeFile()`)
 - Non-determinism (Math.random() makes billing irreproducible)
 - Debugging nightmare (formulas have side effects)
@@ -705,8 +762,10 @@ scheduled ──calculate()──> calculated ──invoice()──> invoiced
 ---
 
 ### Anti-Pattern 7: Ignoring Currency in Calculations
+
 **What:** Store all amounts as numbers without currency metadata.
 **Why bad:**
+
 - Can't mix currencies in reports (100 TRY + 100 EUR = 200 what?)
 - Exchange rate application unclear (when to convert?)
 - Multi-currency invoices broken
@@ -745,16 +804,16 @@ scheduled ──calculate()──> calculated ──invoice()──> invoiced
 
 ## Confidence Assessment
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Modular Monolith vs Microservices | **HIGH** | Well-established pattern for solo developers; training data + domain reasoning |
-| Contract → Obligation → Billing → Invoice Pipeline | **HIGH** | Standard billing domain model; verified against project requirements |
-| Queue-Based Billing Orchestration (BullMQ) | **MEDIUM** | BullMQ is a common choice for NestJS, but not verified with 2026 sources |
-| Provider-Agnostic Adapter Pattern | **HIGH** | Classic adapter pattern; widely used for payment integrations |
-| Multi-Tenant Data Isolation | **MEDIUM** | Row-level filtering is standard, but RLS + Prisma interaction not verified |
-| Formula Engine (math.js) | **MEDIUM** | math.js is popular, but sandboxing details need verification with current docs |
-| Event-Driven State Machines | **HIGH** | Standard domain modeling pattern; no library dependency |
-| Suggested Build Order | **HIGH** | Based on dependency analysis of project requirements |
+| Area                                               | Confidence | Notes                                                                          |
+| -------------------------------------------------- | ---------- | ------------------------------------------------------------------------------ |
+| Modular Monolith vs Microservices                  | **HIGH**   | Well-established pattern for solo developers; training data + domain reasoning |
+| Contract → Obligation → Billing → Invoice Pipeline | **HIGH**   | Standard billing domain model; verified against project requirements           |
+| Queue-Based Billing Orchestration (BullMQ)         | **MEDIUM** | BullMQ is a common choice for NestJS, but not verified with 2026 sources       |
+| Provider-Agnostic Adapter Pattern                  | **HIGH**   | Classic adapter pattern; widely used for payment integrations                  |
+| Multi-Tenant Data Isolation                        | **MEDIUM** | Row-level filtering is standard, but RLS + Prisma interaction not verified     |
+| Formula Engine (math.js)                           | **MEDIUM** | math.js is popular, but sandboxing details need verification with current docs |
+| Event-Driven State Machines                        | **HIGH**   | Standard domain modeling pattern; no library dependency                        |
+| Suggested Build Order                              | **HIGH**   | Based on dependency analysis of project requirements                           |
 
 ---
 
@@ -767,6 +826,7 @@ scheduled ──calculate()──> calculated ──invoice()──> invoiced
 - **Project requirements** — from `.planning/PROJECT.md`
 
 **No external sources were consulted.** Recommendations should be validated against:
+
 - Official NestJS documentation (2026)
 - BullMQ documentation (2026)
 - Prisma documentation (especially RLS support)

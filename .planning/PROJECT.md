@@ -66,18 +66,19 @@ Automated, end-to-end billing accuracy: a published contract automatically gener
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| MAG: No carry-forward | Each month independent, simpler to implement and audit | — Pending |
-| Revenue declaration: KDV-inclusive gross | Turkish market standard, avoids tax calculation complexity | — Pending |
-| Amendment: Next full period only | No mid-month proration for amendments, reduces complexity | — Pending |
-| Stripe customer per tenant (not contract) | Multi-contract tenants share one Stripe customer | — Pending |
-| Admin-first, tenant portal later | Faster to v1 demo, tenant portal is v2 | — Pending |
-| Multi-currency in v1 | International sales potential requires EUR/USD from start | — Pending |
-| Formula engine: math.js sandbox | Flexible, secure expression evaluation with whitelist | — Pending |
-| Invoice provider: Adapter pattern | Stripe now, ERP integration later without refactoring | — Pending |
-| BullMQ for async billing | Billing runs are long-running, need queue-based orchestration | — Pending |
-| SSE for real-time notifications | Simpler than WebSocket, sufficient for notification use case | — Pending |
+| Decision                                  | Rationale                                                     | Outcome   |
+| ----------------------------------------- | ------------------------------------------------------------- | --------- |
+| MAG: No carry-forward                     | Each month independent, simpler to implement and audit        | — Pending |
+| Revenue declaration: KDV-inclusive gross  | Turkish market standard, avoids tax calculation complexity    | — Pending |
+| Amendment: Next full period only          | No mid-month proration for amendments, reduces complexity     | — Pending |
+| Stripe customer per tenant (not contract) | Multi-contract tenants share one Stripe customer              | — Pending |
+| Admin-first, tenant portal later          | Faster to v1 demo, tenant portal is v2                        | — Pending |
+| Multi-currency in v1                      | International sales potential requires EUR/USD from start     | — Pending |
+| Formula engine: math.js sandbox           | Flexible, secure expression evaluation with whitelist         | — Pending |
+| Invoice provider: Adapter pattern         | Stripe now, ERP integration later without refactoring         | — Pending |
+| BullMQ for async billing                  | Billing runs are long-running, need queue-based orchestration | — Pending |
+| SSE for real-time notifications           | Simpler than WebSocket, sufficient for notification use case  | — Pending |
 
 ---
-*Last updated: 2026-02-28 after initialization*
+
+_Last updated: 2026-02-28 after initialization_

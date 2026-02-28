@@ -19,8 +19,31 @@ affects: [01-02, 01-03, 01-04, 02-01, 02-02, 03-01, 03-02]
 
 # Tech tracking
 tech-stack:
-  added: [turborepo, pnpm@9.15.0, nestjs@10, prisma@5, typescript@5, bcrypt@5, ioredis@5, class-validator, class-transformer, helmet, passport, passport-jwt, decimal.js]
-  patterns: [pnpm-workspaces, turbo-pipeline, multi-stage-dockerfile, prisma-schema-map-conventions, upsert-idempotent-seeding, bcrypt-password-hashing]
+  added:
+    [
+      turborepo,
+      pnpm@9.15.0,
+      nestjs@10,
+      prisma@5,
+      typescript@5,
+      bcrypt@5,
+      ioredis@5,
+      class-validator,
+      class-transformer,
+      helmet,
+      passport,
+      passport-jwt,
+      decimal.js,
+    ]
+  patterns:
+    [
+      pnpm-workspaces,
+      turbo-pipeline,
+      multi-stage-dockerfile,
+      prisma-schema-map-conventions,
+      upsert-idempotent-seeding,
+      bcrypt-password-hashing,
+    ]
 
 key-files:
   created:
@@ -42,17 +65,17 @@ key-files:
     - .gitignore
 
 key-decisions:
-  - "Used pnpm@9.15.0 as package manager with corepack for reproducibility"
-  - "All 25 enums defined as string-value TypeScript enums for runtime safety"
-  - "Prisma schema uses @default(uuid()) for all IDs, @db.Decimal for all monetary fields"
-  - "Seed uses upsert for idempotent re-runnable seeding"
-  - "Docker Compose API service uses multi-stage Dockerfile with development target"
+  - 'Used pnpm@9.15.0 as package manager with corepack for reproducibility'
+  - 'All 25 enums defined as string-value TypeScript enums for runtime safety'
+  - 'Prisma schema uses @default(uuid()) for all IDs, @db.Decimal for all monetary fields'
+  - 'Seed uses upsert for idempotent re-runnable seeding'
+  - 'Docker Compose API service uses multi-stage Dockerfile with development target'
 
 patterns-established:
-  - "Monorepo structure: apps/* for deployable services, packages/* for shared libraries"
-  - "Prisma conventions: snake_case DB columns via @map(), table names via @@map()"
-  - "TypeScript enum parity: packages/shared-types/src/enums.ts mirrors Prisma schema enums exactly"
-  - "Password hashing: bcrypt with work factor 10 for all user passwords"
+  - 'Monorepo structure: apps/* for deployable services, packages/* for shared libraries'
+  - 'Prisma conventions: snake_case DB columns via @map(), table names via @@map()'
+  - 'TypeScript enum parity: packages/shared-types/src/enums.ts mirrors Prisma schema enums exactly'
+  - 'Password hashing: bcrypt with work factor 10 for all user passwords'
 
 requirements-completed: [R1.1, R1.2, R1.3]
 
@@ -74,6 +97,7 @@ completed: 2026-03-01
 - **Files modified:** 31
 
 ## Accomplishments
+
 - Complete Turborepo monorepo with 5 workspace packages resolving via pnpm install
 - Docker Compose orchestrating PostgreSQL 15, Redis 7, and NestJS API with health checks
 - Prisma schema with 20 models, 25 enums, 18 indexes, 4 self-referencing relations (725 lines)
@@ -90,8 +114,9 @@ Each task was committed atomically:
 3. **Task 2: Complete Prisma schema with 20+ models, migration, and ADB seed data** - `bb4fe0c` (feat)
 
 ## Files Created/Modified
+
 - `package.json` - Root monorepo config with Turborepo scripts
-- `pnpm-workspace.yaml` - Workspace package definitions (apps/*, packages/*)
+- `pnpm-workspace.yaml` - Workspace package definitions (apps/_, packages/_)
 - `turbo.json` - Turborepo pipeline (build, dev, lint, test, db:migrate, db:generate)
 - `tsconfig.json` - Root TypeScript config extending packages/tsconfig/base.json
 - `.npmrc` - pnpm configuration (auto-install-peers, relaxed peer deps)
@@ -122,6 +147,7 @@ Each task was committed atomically:
 - `packages/eslint-config/package.json` - ESLint config stub
 
 ## Decisions Made
+
 - Used pnpm@9.15.0 with corepack (as specified in plan, not upgraded to v10)
 - All enums defined with explicit string values (`key = 'key'`) for runtime type safety and JSON serialization
 - Prisma schema exactly matches docs/05_Data_Model_v2.md with all field types, constraints, and indexes
@@ -133,14 +159,16 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Created workspace package stubs during Task 1a**
+
 - **Found during:** Task 1a (Root scaffold)
 - **Issue:** pnpm install requires all workspace packages referenced in pnpm-workspace.yaml to have valid package.json files. Task 1a plan said "Items 16-21 covered in Task 1b" but pnpm install would fail without them.
 - **Fix:** Created minimal package.json and placeholder source files for shared-types, formula-engine, tsconfig, and eslint-config during Task 1a to unblock pnpm install.
-- **Files modified:** packages/*/package.json, packages/*/src/index.ts
+- **Files modified:** packages/_/package.json, packages/_/src/index.ts
 - **Verification:** pnpm install succeeded
 - **Committed in:** 569ede5 (Task 1a commit)
 
 **2. [Rule 3 - Blocking] Migration and seed skipped due to missing Docker/PostgreSQL**
+
 - **Found during:** Task 2 (Schema and seed)
 - **Issue:** Neither Docker nor PostgreSQL is installed on this machine. Cannot run `prisma migrate dev` or `prisma db seed`.
 - **Fix:** Validated schema via `prisma generate` (client generation succeeds = schema is valid). Migration and seed will execute when Docker/PostgreSQL becomes available. Schema and seed files are complete and correct.
@@ -154,12 +182,14 @@ Each task was committed atomically:
 **Impact on plan:** Deviation 1 was necessary ordering fix. Deviation 2 is an infrastructure limitation -- all code artifacts are complete and verified via schema validation and TypeScript compilation. Migration + seed will work on first `docker compose up`.
 
 ## Issues Encountered
+
 - Docker is not installed on the development machine. Prisma schema was validated via `prisma generate` (which parses and validates the entire schema). Migration and seed execution deferred to when Docker/PostgreSQL is available.
 - pnpm workspace requires all referenced packages to exist before install, requiring package stubs to be created earlier than planned.
 
 ## User Setup Required
 
 **Docker and PostgreSQL are required to run migrations and seed data.** After installing Docker:
+
 1. Run `docker compose up -d postgres redis` to start database services
 2. Run `cd apps/api && npx prisma migrate dev --name init` to create tables
 3. Run `cd apps/api && npx prisma db seed` to load test data
@@ -167,6 +197,7 @@ Each task was committed atomically:
 5. Verify with `curl http://localhost:3000` for API health check
 
 ## Next Phase Readiness
+
 - Monorepo structure complete, all packages resolve via pnpm install
 - Prisma schema ready for migration (20 models, 25 enums, full relations)
 - NestJS API shell ready for auth module (01-02), admin module (01-03), and audit/health/swagger (01-04)
@@ -178,5 +209,6 @@ Each task was committed atomically:
 All 28 created files verified present. All 3 task commits verified in git log. SUMMARY.md exists.
 
 ---
-*Phase: 01-foundation-infrastructure*
-*Completed: 2026-03-01*
+
+_Phase: 01-foundation-infrastructure_
+_Completed: 2026-03-01_

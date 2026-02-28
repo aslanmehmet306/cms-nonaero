@@ -12,9 +12,10 @@ These mistakes cause rewrites, data corruption, or financial inaccuracies requir
 
 **What goes wrong:**
 Using JavaScript's native `number` type (IEEE 754 floating point) for financial calculations leads to precision errors:
+
 ```javascript
 // BAD: 0.1 + 0.2 = 0.30000000000000004
-const subtotal = 10.10;
+const subtotal = 10.1;
 const tax = 1.51;
 const total = subtotal + tax; // 11.609999999999999
 ```
@@ -22,11 +23,13 @@ const total = subtotal + tax; // 11.609999999999999
 In a billing system with thousands of invoices, rounding errors compound. Different rounding at calculation vs display time creates reconciliation nightmares. Auditors and accountants will reject reports that don't balance to the cent.
 
 **Why it happens:**
+
 - Developers unfamiliar with financial software use `number` type by default
 - Math appears correct in small tests but fails at scale
 - PostgreSQL `NUMERIC` type doesn't protect you if calculations happen in JS
 
 **Consequences:**
+
 - Invoice totals don't match sum of line items (even by $0.01 → customer disputes)
 - Revenue reports don't reconcile with accounting systems
 - Tax calculations off by fractional cents → compliance issues
@@ -34,6 +37,7 @@ In a billing system with thousands of invoices, rounding errors compound. Differ
 - Loss of customer trust ("your system can't add correctly")
 
 **Prevention:**
+
 ```typescript
 // CORRECT: Use decimal library for ALL financial math
 import Decimal from 'decimal.js';
@@ -60,12 +64,14 @@ CREATE TABLE invoice_lines (
 ```
 
 **Detection:**
+
 - Unit tests fail when comparing `toBe(11.61)` vs actual `11.609999...`
 - QA finds invoice totals that don't sum correctly
 - Reconciliation reports show unexplained penny differences
 - Customers report invoices with fractional cent amounts
 
 **Phase Impact:**
+
 - **Phase 1 (Foundation):** MUST establish decimal.js usage pattern immediately
 - **Phase 2 (Billing Core):** All formula engine outputs must use Decimal
 - **Phase 3 (MAG Settlement):** Critical for year-end true-up accuracy
@@ -88,6 +94,7 @@ async function runBilling(tenantId: string, period: string) {
 ```
 
 Real-world scenarios that trigger duplicates:
+
 - Billing cron job runs twice due to clock skew/restart
 - Developer re-runs billing for testing in production
 - User clicks "Generate Invoice" button twice (double-click, slow network)
@@ -95,17 +102,20 @@ Real-world scenarios that trigger duplicates:
 - BullMQ job retries after worker crash
 
 **Why it happens:**
+
 - Billing is modeled as a function call, not a state transition
 - No unique constraint on (tenant, period) prevents duplicates
 - Developers assume "billing runs once per period" (false in practice)
 
 **Consequences:**
+
 - Customers double-charged → refunds, support tickets, loss of trust
 - Stripe invoices can't be deleted (only voided), leaving messy audit trail
 - Financial reports overcounted → incorrect revenue recognition
 - Reconciliation between system and Stripe becomes manual nightmare
 
 **Prevention:**
+
 ```typescript
 // CORRECT: Idempotent billing with unique constraint
 // Database schema
@@ -169,12 +179,14 @@ async function runBilling(tenantId: string, period: { start: Date, end: Date }) 
 ```
 
 **Detection:**
+
 - Duplicate invoices appear in Stripe dashboard for same period
 - Customer receives multiple emails for same billing period
 - Database query shows multiple billing_runs for same (tenant, period)
 - Revenue reports show 2x expected amounts for certain periods
 
 **Phase Impact:**
+
 - **Phase 2 (Billing Core):** MUST implement idempotency from day one
 - **Phase 3 (MAG Settlement):** True-up recalculations must be idempotent
 - **Phase 4 (Admin Portal):** UI must handle "already billed" gracefully
@@ -202,18 +214,21 @@ Do we charge $500 + 10% or just 10%?
 ```
 
 Complexity multiplies:
+
 - 3 amendments = 8 possible states
 - 5 amendments = 32 states
 - 10 amendments = 1024 states
 - Each state needs proration logic, testing, and audit trail
 
 **Why it happens:**
+
 - Real-world contracts change frequently (customer demand)
 - Developers model "contract is mutable" without constraints
 - Business rules from legacy systems allow anything
 - No one calculates the testing matrix upfront
 
 **Consequences:**
+
 - Billing logic becomes unmaintainable spaghetti code
 - Each edge case requires hotfix → introduces new bugs
 - Impossible to test all combinations
@@ -222,6 +237,7 @@ Complexity multiplies:
 - Solo developer spends weeks debugging proration logic
 
 **Prevention:**
+
 ```typescript
 // STRATEGY 1: Amendment = New Contract (Full Period Only)
 // Simplest: Amendments effective first day of next period only
@@ -241,11 +257,13 @@ const amendmentRules = {
 // Billing becomes simple
 function getActiveContract(tenant: Tenant, billingDate: Date): Contract {
   return tenant.contracts
-    .filter(c => c.status === 'active')
-    .filter(c => isWithinInterval(billingDate, {
-      start: c.periodStart,
-      end: c.periodEnd
-    }))
+    .filter((c) => c.status === 'active')
+    .filter((c) =>
+      isWithinInterval(billingDate, {
+        start: c.periodStart,
+        end: c.periodEnd,
+      }),
+    )
     .sort((a, b) => b.version - a.version)[0]; // Latest version wins
 }
 
@@ -266,6 +284,7 @@ interface ContractSnapshot {
 ```
 
 **Detection:**
+
 - Business logic has deeply nested if/else for contract states
 - Unit tests can't cover all amendment combinations
 - Billing runs fail with "unexpected state" errors
@@ -273,6 +292,7 @@ interface ContractSnapshot {
 - Support tickets: "Why is my invoice different from contract?"
 
 **Phase Impact:**
+
 - **Phase 1 (Foundation):** Define amendment rules in data model NOW
 - **Phase 2 (Billing Core):** Enforce "next period only" in contract workflow
 - **Phase 5 (Polish):** If mid-period needed, requires dedicated sprint
@@ -290,8 +310,8 @@ const formula = contract.formula; // From database
 const result = eval(formula); // CATASTROPHIC
 
 // Attack vectors:
-formula = "process.exit(1)";  // Crash server
-formula = "while(true) {}";   // Infinite loop
+formula = 'process.exit(1)'; // Crash server
+formula = 'while(true) {}'; // Infinite loop
 formula = "require('fs').readFileSync('/etc/passwd')"; // Data theft
 formula = "global.constructor.constructor('return process')().exit()"; // Escape sandbox
 ```
@@ -299,12 +319,14 @@ formula = "global.constructor.constructor('return process')().exit()"; // Escape
 Even "safe" libraries like math.js have had sandbox escapes in the past.
 
 **Why it happens:**
+
 - Flexibility requirement: "Business users need to define custom formulas"
 - Developers use math.js with default config (allows function definitions)
 - No timeout protection for formula evaluation
 - Formula validation happens at runtime, not at definition time
 
 **Consequences:**
+
 - Server crashes during billing run (DoS)
 - Infinite loops consume 100% CPU, block billing queue
 - Sandbox escapes → full server compromise
@@ -312,6 +334,7 @@ Even "safe" libraries like math.js have had sandbox escapes in the past.
 - Billing fails for ALL tenants (not just attacker)
 
 **Prevention:**
+
 ```typescript
 // CORRECT: Hardened math.js sandbox
 import { create, all } from 'mathjs';
@@ -327,15 +350,26 @@ const math = create({
   compile: undefined,
   simplify: undefined,
   derivative: undefined,
-  rationalize: undefined
+  rationalize: undefined,
 });
 
 // Whitelist-only approach
 const ALLOWED_FUNCTIONS = new Set([
-  'add', 'subtract', 'multiply', 'divide',
-  'max', 'min', 'round', 'floor', 'ceil',
-  'abs', 'sqrt', 'pow',
-  'sum', 'mean', 'median'
+  'add',
+  'subtract',
+  'multiply',
+  'divide',
+  'max',
+  'min',
+  'round',
+  'floor',
+  'ceil',
+  'abs',
+  'sqrt',
+  'pow',
+  'sum',
+  'mean',
+  'median',
 ]);
 
 function validateFormula(formula: string): void {
@@ -392,6 +426,7 @@ interface FormulaVersion {
 ```
 
 **Detection:**
+
 - Billing runs timeout after 5+ minutes (normal: <1min)
 - CPU spikes to 100% during billing
 - Server crashes with "out of memory" during formula eval
@@ -399,6 +434,7 @@ interface FormulaVersion {
 - Penetration test successfully injects malicious formula
 
 **Phase Impact:**
+
 - **Phase 2 (Billing Core):** Sandbox hardening is CRITICAL before any formula use
 - **Phase 3 (MAG Settlement):** Complex formulas increase attack surface
 - **Phase 4 (Admin Portal):** UI must validate formulas on definition, not just runtime
@@ -437,12 +473,14 @@ const revShareEUR = new Decimal('10000').times('0.10'); // €1,000
 ```
 
 **Why it happens:**
+
 - Business requirements vague on FX risk allocation
 - Multi-currency added late without architectural planning
 - Rate source not specified (ECB, manual, bank feed)
 - Stripe handles multi-currency differently than accounting expects
 
 **Consequences:**
+
 - Revenue reports don't reconcile with accounting
 - MAG true-up calculations disputed by customers
 - FX gains/losses not properly tracked
@@ -450,6 +488,7 @@ const revShareEUR = new Decimal('10000').times('0.10'); // €1,000
 - Inconsistent behavior between invoice generation and reporting
 
 **Prevention:**
+
 ```typescript
 // STRATEGY: Contract Currency = Source of Truth
 
@@ -512,6 +551,7 @@ CREATE TABLE exchange_rates (
 ```
 
 **Detection:**
+
 - Reports in different currencies show different revenue totals (after conversion)
 - Customers question MAG true-up amounts
 - Stripe invoice amounts don't match internal calculations
@@ -519,6 +559,7 @@ CREATE TABLE exchange_rates (
 - FX gains/losses not balanced in accounting
 
 **Phase Impact:**
+
 - **Phase 1 (Foundation):** Define FX policy and rate source NOW
 - **Phase 2 (Billing Core):** Implement rate snapshot at obligation time
 - **Phase 3 (MAG Settlement):** True-up FX conversion critical
@@ -561,18 +602,21 @@ async function handleWebhook(event: StripeEvent) {
 ```
 
 Additional webhook pitfalls:
+
 - Same event delivered twice (Stripe retry after timeout)
 - Webhook endpoint downtime → events missed forever
 - Events from test mode mixed with live mode
 - Old events replayed during Stripe API issues
 
 **Why it happens:**
+
 - Network latency varies per request
 - Stripe retries failed webhooks (up to 3 days)
 - Developers assume HTTP request order = event order
 - Event log isn't treated as source of truth
 
 **Consequences:**
+
 - Invoice status incorrect in database
 - Payment recorded before invoice exists → foreign key error
 - Duplicate payment processing
@@ -580,6 +624,7 @@ Additional webhook pitfalls:
 - Manual reconciliation required between Stripe and DB
 
 **Prevention:**
+
 ```typescript
 // CORRECT: Idempotent, event-sourced webhook handling
 
@@ -692,6 +737,7 @@ async function syncStripeEvents() {
 ```
 
 **Detection:**
+
 - Database invoice status doesn't match Stripe dashboard
 - Webhook handler logs show events out of order
 - Unique constraint violations on stripe_events.id
@@ -699,6 +745,7 @@ async function syncStripeEvents() {
 - Manual reconciliation finds missing payments
 
 **Phase Impact:**
+
 - **Phase 2 (Billing Core):** Event storage and idempotency critical
 - **Phase 3 (Payment Tracking):** Sync job prevents missed payments
 - **Phase 4 (Admin Portal):** UI should show Stripe as source of truth
@@ -712,6 +759,7 @@ These cause bugs, support burden, or technical debt but don't require rewrites.
 ### Pitfall 7: Time Zone Confusion in Billing Periods
 
 **What goes wrong:**
+
 ```typescript
 // Airport timezone: Europe/Istanbul (UTC+3)
 // Server timezone: UTC
@@ -728,6 +776,7 @@ These cause bugs, support burden, or technical debt but don't require rewrites.
 ```
 
 **Prevention:**
+
 - Store all dates in UTC, convert for display only
 - Use `date` type (not `timestamp`) for billing periods (no timezone)
 - Airport configuration includes timezone setting
@@ -742,7 +791,7 @@ const periodEnd = new Date('2026-05-31'); // Date only, no time
 // Convert to UTC midnight in airport timezone
 const periodEndUTC = zonedTimeToUtc(
   `${periodEnd.toISOString().split('T')[0]}T23:59:59`,
-  airport.timezone
+  airport.timezone,
 );
 
 // Billing runs after this UTC timestamp
@@ -756,6 +805,7 @@ if (now > periodEndUTC) {
 ### Pitfall 8: MAG Proration for Partial Months
 
 **What goes wrong:**
+
 ```typescript
 // Contract: $12,000 annual MAG ($1,000/month)
 // Start date: Mar 15, 2026 (mid-month)
@@ -774,6 +824,7 @@ if (now > periodEndUTC) {
 ```
 
 **Prevention:**
+
 - Document MAG proration policy clearly in contract terms
 - Recommended: No mid-month contract starts (align to period boundaries)
 - If mid-month required: Prorate annual MAG, recalculate monthly threshold
@@ -784,6 +835,7 @@ if (now > periodEndUTC) {
 ### Pitfall 9: Audit Trail Incompleteness
 
 **What goes wrong:**
+
 ```typescript
 // Customer: "Why is May invoice $1,234.56?"
 // Support: *checks database*
@@ -800,6 +852,7 @@ if (now > periodEndUTC) {
 ```
 
 **Prevention:**
+
 ```typescript
 // Complete audit trail schema
 CREATE TABLE invoice_lines (
@@ -845,6 +898,7 @@ function calculateLineHash(line: InvoiceLineInput): string {
 ```
 
 **Detection:**
+
 - Customers dispute invoices and you can't explain the calculation
 - Auditors request "proof of calculation" and you can't provide it
 - Support team escalates every billing question to engineering
@@ -855,6 +909,7 @@ function calculateLineHash(line: InvoiceLineInput): string {
 ### Pitfall 10: Scope Creep: Multi-Airport Before Single-Airport
 
 **What goes wrong:**
+
 ```typescript
 // Day 1: "Architecture supports multi-airport"
 // Week 2: "Let's add tenant-to-airport assignment"
@@ -867,18 +922,21 @@ function calculateLineHash(line: InvoiceLineInput): string {
 ```
 
 **Why it happens:**
+
 - Developer has domain expertise, sees "obvious" future needs
 - Technical perfectionism: "If we don't build it right now, we'll have to refactor"
 - Fear of "painting into a corner" architecturally
 - No product manager to say "not now"
 
 **Consequences:**
+
 - MVP timeline slips from 12 weeks to 24+ weeks
 - Complexity increases testing burden (solo dev can't keep up)
 - Demo requires explaining "multi-airport" when customer only has one
 - Opportunity cost: Features that actually close deals don't get built
 
 **Prevention:**
+
 ```typescript
 // SCOPE DISCIPLINE for v1
 
@@ -935,12 +993,14 @@ CREATE TABLE tenants (
 ```
 
 **Detection:**
+
 - Backlog has 15 "multi-airport" tickets, 0 completed
 - Demo meeting: Customer asks "what's this airport dropdown for?"
 - Timeline review: "Why did this take 3 weeks?" → "Multi-airport support"
 - Codebase: Abstractions for features no one uses
 
 **Phase Impact:**
+
 - **Phase 1-4:** Hardcode single airport, skip multi-airport UI entirely
 - **Phase 5:** Add multi-airport ONLY if customer demands it
 
@@ -953,6 +1013,7 @@ These cause annoyance or code smell but are easily fixed.
 ### Pitfall 11: BullMQ Job Retry Explosion
 
 **What goes wrong:**
+
 ```typescript
 // Billing job fails (Stripe API timeout)
 // BullMQ retries: Attempt 2, 3, 4... 10
@@ -961,6 +1022,7 @@ These cause annoyance or code smell but are easily fixed.
 ```
 
 **Prevention:**
+
 - Configure max retries: `attempts: 3`
 - Use exponential backoff: `backoff: { type: 'exponential', delay: 1000 }`
 - Idempotency key in job data
@@ -971,6 +1033,7 @@ These cause annoyance or code smell but are easily fixed.
 ### Pitfall 12: Missing Index on Tenant Queries
 
 **What goes wrong:**
+
 ```sql
 -- Billing run queries all obligations for tenant
 SELECT * FROM obligations
@@ -982,6 +1045,7 @@ WHERE tenant_id = '...'
 ```
 
 **Prevention:**
+
 ```sql
 CREATE INDEX idx_obligations_tenant_period
   ON obligations(tenant_id, period_start, period_end);
@@ -998,6 +1062,7 @@ CREATE INDEX idx_billing_runs_status
 ### Pitfall 13: Hardcoded Formula Constants
 
 **What goes wrong:**
+
 ```typescript
 // Formula: "revenue * 0.10" (10% revenue share)
 // Customer: "We negotiated 12%, please update"
@@ -1006,13 +1071,14 @@ CREATE INDEX idx_billing_runs_status
 ```
 
 **Prevention:**
+
 ```typescript
 // Formula uses variables
-formula = "revenue * rate";
+formula = 'revenue * rate';
 
 // Variables stored in contract
 contract.formulaVariables = {
-  rate: new Decimal('0.10')
+  rate: new Decimal('0.10'),
 };
 
 // Amendment can change variables without formula change
@@ -1023,6 +1089,7 @@ contract.formulaVariables = {
 ### Pitfall 14: Email Notification Spam
 
 **What goes wrong:**
+
 ```typescript
 // Billing run processes 50 tenants
 // Each generates invoice → 50 emails sent immediately
@@ -1031,6 +1098,7 @@ contract.formulaVariables = {
 ```
 
 **Prevention:**
+
 - Queue emails (BullMQ job)
 - Batch sending with rate limiting
 - Digest option: "Daily invoice summary" instead of per-invoice
@@ -1040,16 +1108,16 @@ contract.formulaVariables = {
 
 ## Phase-Specific Warnings
 
-| Phase Topic | Likely Pitfall | Mitigation | Detection |
-|-------------|---------------|------------|-----------|
-| **Phase 1: Foundation** | Using `number` for money | Establish decimal.js pattern in first PR | Unit test: `expect(0.1 + 0.2).toBe(0.3)` fails |
-| **Phase 2: Billing Core** | Non-idempotent billing | Unique constraint (tenant, period) | Duplicate invoices in DB |
-| **Phase 2: Formula Engine** | Sandbox escape | Whitelist functions, AST validation | Security audit flags `eval()` |
-| **Phase 3: MAG Settlement** | FX rate timing ambiguity | Document rate snapshot policy | Revenue reports don't reconcile |
-| **Phase 3: MAG True-up** | Proration edge cases | Defer mid-month starts to v2 | Complex if/else in billing logic |
-| **Phase 4: Stripe Integration** | Webhook ordering assumptions | Event sourcing pattern | Payment status incorrect |
-| **Phase 4: Admin Portal** | Scope creep: Multi-airport UI | Hardcode single airport constant | Demo has unused features |
-| **Phase 5: Testing** | Missing indexes | EXPLAIN ANALYZE all queries | Slow billing runs (>1min) |
+| Phase Topic                     | Likely Pitfall                | Mitigation                               | Detection                                      |
+| ------------------------------- | ----------------------------- | ---------------------------------------- | ---------------------------------------------- |
+| **Phase 1: Foundation**         | Using `number` for money      | Establish decimal.js pattern in first PR | Unit test: `expect(0.1 + 0.2).toBe(0.3)` fails |
+| **Phase 2: Billing Core**       | Non-idempotent billing        | Unique constraint (tenant, period)       | Duplicate invoices in DB                       |
+| **Phase 2: Formula Engine**     | Sandbox escape                | Whitelist functions, AST validation      | Security audit flags `eval()`                  |
+| **Phase 3: MAG Settlement**     | FX rate timing ambiguity      | Document rate snapshot policy            | Revenue reports don't reconcile                |
+| **Phase 3: MAG True-up**        | Proration edge cases          | Defer mid-month starts to v2             | Complex if/else in billing logic               |
+| **Phase 4: Stripe Integration** | Webhook ordering assumptions  | Event sourcing pattern                   | Payment status incorrect                       |
+| **Phase 4: Admin Portal**       | Scope creep: Multi-airport UI | Hardcode single airport constant         | Demo has unused features                       |
+| **Phase 5: Testing**            | Missing indexes               | EXPLAIN ANALYZE all queries              | Slow billing runs (>1min)                      |
 
 ---
 
@@ -1060,11 +1128,13 @@ contract.formulaVariables = {
 **Trap:** "This needs to handle 1M invoices/month" (you have 0 customers)
 
 **Reality check:**
+
 - 100 tenants × 12 invoices/year = 1,200 invoices (easily handled by PostgreSQL)
 - Premature optimization wastes time on problems you don't have
 - Better: Ship fast, profile later
 
 **Mitigation:**
+
 - Benchmark with realistic data (1K invoices, not 1M)
 - Use standard patterns (indexes, connection pooling) without heroics
 - Monitor query times; optimize only when >1s
@@ -1076,11 +1146,13 @@ contract.formulaVariables = {
 **Trap:** "This formula engine isn't production-ready, I need to add [10 more features]"
 
 **Reality check:**
+
 - "Good enough for demo" is good enough for v1
 - Customers judge on UI and workflow, not code elegance
 - Technical debt is cheaper than missed market opportunity
 
 **Mitigation:**
+
 - Time-box features: "If not done in 2 days, defer to v2"
 - Focus on happy path (90% of use cases)
 - Document known limitations (better than delayed ship)
@@ -1092,11 +1164,13 @@ contract.formulaVariables = {
 **Trap:** "I need 90% test coverage before shipping"
 
 **Reality check:**
+
 - 90% coverage ≠ 90% confidence (tests can be shallow)
 - Manual testing catches UI bugs that unit tests miss
 - Time spent on tests = time not spent on features
 
 **Mitigation:**
+
 - Test critical paths: Billing calculation, invoice generation, Stripe integration
 - Skip testing obvious CRUD (getAll, getById)
 - E2E test: "Create contract → run billing → verify invoice" (covers 80% of logic)
@@ -1105,15 +1179,15 @@ contract.formulaVariables = {
 
 ## Confidence Assessment
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Financial precision | HIGH | Standard practice in financial software, well-documented |
-| Idempotency | HIGH | Common pattern in payment systems, Stripe docs cover this |
-| Formula engine security | MEDIUM | Based on math.js best practices, but new vulnerabilities emerge |
-| Multi-currency | MEDIUM | General patterns apply, but airport-specific edge cases may exist |
-| Stripe webhooks | HIGH | Stripe docs + common failure modes well-known |
-| State machine complexity | HIGH | Universal problem in billing systems |
-| Solo dev scope creep | HIGH | Pattern recognition from many projects |
+| Area                     | Confidence | Notes                                                             |
+| ------------------------ | ---------- | ----------------------------------------------------------------- |
+| Financial precision      | HIGH       | Standard practice in financial software, well-documented          |
+| Idempotency              | HIGH       | Common pattern in payment systems, Stripe docs cover this         |
+| Formula engine security  | MEDIUM     | Based on math.js best practices, but new vulnerabilities emerge   |
+| Multi-currency           | MEDIUM     | General patterns apply, but airport-specific edge cases may exist |
+| Stripe webhooks          | HIGH       | Stripe docs + common failure modes well-known                     |
+| State machine complexity | HIGH       | Universal problem in billing systems                              |
+| Solo dev scope creep     | HIGH       | Pattern recognition from many projects                            |
 
 ## Sources
 
@@ -1126,11 +1200,13 @@ contract.formulaVariables = {
 5. **Domain expertise patterns** (billing system anti-patterns, state machine explosion)
 
 **Confidence level: MEDIUM overall** — Core principles are sound and widely applicable, but specific library versions (math.js 2026, Stripe API changes) and new edge cases may exist. Recommend validating:
+
 - Math.js current sandbox escape vulnerabilities (check CVE database)
 - Stripe webhook best practices (current documentation, 2026)
 - Decimal.js vs alternatives (currency.js, big.js, dinero.js)
 
 **Verification needed before implementation:**
+
 - [ ] Math.js sandbox hardening (check latest security advisories)
 - [ ] Stripe webhook event ordering guarantees (official docs)
 - [ ] PostgreSQL NUMERIC precision limits for financial calculations

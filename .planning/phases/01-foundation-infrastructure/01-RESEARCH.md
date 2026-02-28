@@ -15,67 +15,70 @@ This is a **modular monolith** (not microservices) with clean domain boundaries.
 **Primary recommendation:** Establish Decimal.js usage patterns in Phase 1 before any calculation code. Create a utility wrapper (DecimalHelper) for common operations (add, multiply, round) that all services import. Use Prisma's Decimal type in schema. Enforce via ESLint rule banning native number arithmetic on monetary values. This prevents the most common cause of billing discrepancies in financial SaaS platforms.
 
 <phase_requirements>
+
 ## Phase Requirements
 
-| ID | Description | Research Support |
-|----|-------------|------------------|
-| R1.1 | Turborepo monorepo with NestJS API, React Admin, React Portal (stub), shared-types, formula-engine packages | Turborepo TypeScript guide, shared types patterns, pnpm workspaces |
-| R1.2 | Docker Compose: PostgreSQL 15 + Redis 7 + API — docker compose up runs everything | Docker Compose development workflow, healthcheck patterns, service dependencies |
-| R1.3 | Prisma schema with 20+ models, all enums, indexes, relations — migration applied | Prisma schema design patterns, multi-file schemas, relationship modeling |
-| R1.4 | JWT auth with 7 roles | NestJS Passport JWT, role-based access control patterns, token lifecycle management |
-| R1.5 | RBAC guards with separation of duties | Custom guards, metadata decorators, separation of duties implementation |
-| R1.6 | Global Decimal.js pattern for all financial calculations | Decimal.js best practices, Prisma Decimal type, financial precision patterns |
-| R1.7 | Audit trail module logging all entity state changes | TypeORM subscribers, audit entity schema, JSONB metadata storage |
-| R1.8 | Health endpoints (liveness + readiness) with DB/Redis checks | NestJS Terminus library, health indicators, Kubernetes probe patterns |
-| R1.9 | Swagger/OpenAPI documentation for all endpoints | NestJS Swagger module, decorator-based documentation, API versioning |
+| ID   | Description                                                                                                 | Research Support                                                                    |
+| ---- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| R1.1 | Turborepo monorepo with NestJS API, React Admin, React Portal (stub), shared-types, formula-engine packages | Turborepo TypeScript guide, shared types patterns, pnpm workspaces                  |
+| R1.2 | Docker Compose: PostgreSQL 15 + Redis 7 + API — docker compose up runs everything                           | Docker Compose development workflow, healthcheck patterns, service dependencies     |
+| R1.3 | Prisma schema with 20+ models, all enums, indexes, relations — migration applied                            | Prisma schema design patterns, multi-file schemas, relationship modeling            |
+| R1.4 | JWT auth with 7 roles                                                                                       | NestJS Passport JWT, role-based access control patterns, token lifecycle management |
+| R1.5 | RBAC guards with separation of duties                                                                       | Custom guards, metadata decorators, separation of duties implementation             |
+| R1.6 | Global Decimal.js pattern for all financial calculations                                                    | Decimal.js best practices, Prisma Decimal type, financial precision patterns        |
+| R1.7 | Audit trail module logging all entity state changes                                                         | TypeORM subscribers, audit entity schema, JSONB metadata storage                    |
+| R1.8 | Health endpoints (liveness + readiness) with DB/Redis checks                                                | NestJS Terminus library, health indicators, Kubernetes probe patterns               |
+| R1.9 | Swagger/OpenAPI documentation for all endpoints                                                             | NestJS Swagger module, decorator-based documentation, API versioning                |
+
 </phase_requirements>
 
 ## Standard Stack
 
 ### Core
 
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| **Turborepo** | 2.x | Monorepo build system | Fast incremental builds, shared configs, task orchestration. Better than Nx for 3-5 package monorepos. Remote caching optional. |
-| **pnpm** | 9.x | Package manager | Efficient disk usage (content-addressed storage), fast installs, strict dependency resolution. Turborepo recommends over npm/yarn. |
-| **NestJS** | 10.x | Backend API framework | Enterprise-grade DI, module architecture, decorator routing. TypeScript-first. Excellent for domain-driven billing systems. |
-| **Prisma** | 5.x or 6.x | ORM & migrations | Type-safe queries prevent runtime errors. Schema-first migrations enable audit trail. Native Decimal type. JSONB support. |
-| **PostgreSQL** | 15.x or 16.x | Primary database | ACID compliance critical for financial transactions. JSONB for snapshots. Native DECIMAL type. Row-level security support. |
-| **Redis** | 7.x | Cache & session store | BullMQ queue backend (Phase 5), session storage, pub/sub for SSE. Minimal caching (billing must be deterministic). |
-| **TypeScript** | 5.x | Type system | REQUIRED. Financial calculations demand compile-time type safety. Shared types between monorepo packages eliminate API drift. |
-| **Decimal.js** | 10.x | Financial precision | JavaScript Number is unsafe for money (0.1 + 0.2 ≠ 0.3). Decimal.js provides exact decimal arithmetic. Currency-agnostic. Immutable API. |
-| **@nestjs/passport** | 10.x | Auth framework | NestJS wrapper for Passport.js. Supports JWT strategy, local strategy, OAuth (future). |
-| **passport-jwt** | 4.x | JWT strategy | Stateless auth. Roles in payload. Multi-instance ready (no sticky sessions). |
-| **bcrypt** | 5.x | Password hashing | Industry standard. Work factor 10-12 for balance. Prevents rainbow table attacks. |
-| **class-validator** | 0.14.x | Request validation | Decorator-based validation. Prevents invalid billing parameters. NestJS standard. |
-| **class-transformer** | 0.5.x | Object mapping | Transform DTOs, exclude sensitive fields. NestJS standard. |
-| **@nestjs/terminus** | 10.x | Health checks | Liveness/readiness probes. PostgreSQL, Redis, disk, memory indicators. Kubernetes-ready. |
-| **@nestjs/swagger** | 7.x | OpenAPI documentation | Auto-generate API docs from decorators. Swagger UI at /api-docs. |
+| Library               | Version      | Purpose               | Why Standard                                                                                                                             |
+| --------------------- | ------------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Turborepo**         | 2.x          | Monorepo build system | Fast incremental builds, shared configs, task orchestration. Better than Nx for 3-5 package monorepos. Remote caching optional.          |
+| **pnpm**              | 9.x          | Package manager       | Efficient disk usage (content-addressed storage), fast installs, strict dependency resolution. Turborepo recommends over npm/yarn.       |
+| **NestJS**            | 10.x         | Backend API framework | Enterprise-grade DI, module architecture, decorator routing. TypeScript-first. Excellent for domain-driven billing systems.              |
+| **Prisma**            | 5.x or 6.x   | ORM & migrations      | Type-safe queries prevent runtime errors. Schema-first migrations enable audit trail. Native Decimal type. JSONB support.                |
+| **PostgreSQL**        | 15.x or 16.x | Primary database      | ACID compliance critical for financial transactions. JSONB for snapshots. Native DECIMAL type. Row-level security support.               |
+| **Redis**             | 7.x          | Cache & session store | BullMQ queue backend (Phase 5), session storage, pub/sub for SSE. Minimal caching (billing must be deterministic).                       |
+| **TypeScript**        | 5.x          | Type system           | REQUIRED. Financial calculations demand compile-time type safety. Shared types between monorepo packages eliminate API drift.            |
+| **Decimal.js**        | 10.x         | Financial precision   | JavaScript Number is unsafe for money (0.1 + 0.2 ≠ 0.3). Decimal.js provides exact decimal arithmetic. Currency-agnostic. Immutable API. |
+| **@nestjs/passport**  | 10.x         | Auth framework        | NestJS wrapper for Passport.js. Supports JWT strategy, local strategy, OAuth (future).                                                   |
+| **passport-jwt**      | 4.x          | JWT strategy          | Stateless auth. Roles in payload. Multi-instance ready (no sticky sessions).                                                             |
+| **bcrypt**            | 5.x          | Password hashing      | Industry standard. Work factor 10-12 for balance. Prevents rainbow table attacks.                                                        |
+| **class-validator**   | 0.14.x       | Request validation    | Decorator-based validation. Prevents invalid billing parameters. NestJS standard.                                                        |
+| **class-transformer** | 0.5.x        | Object mapping        | Transform DTOs, exclude sensitive fields. NestJS standard.                                                                               |
+| **@nestjs/terminus**  | 10.x         | Health checks         | Liveness/readiness probes. PostgreSQL, Redis, disk, memory indicators. Kubernetes-ready.                                                 |
+| **@nestjs/swagger**   | 7.x          | OpenAPI documentation | Auto-generate API docs from decorators. Swagger UI at /api-docs.                                                                         |
 
 ### Supporting
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| **@nestjs/config** | 3.x | Environment configuration | Load .env files, validate env vars with Joi schemas. |
-| **@nestjs/event-emitter** | 2.x | Internal event bus | Decouple domains (ContractPublished → ObligationScheduler). |
-| **helmet** | 7.x | HTTP security headers | Protect admin portal from XSS, clickjacking. |
-| **@nestjs/throttler** | 5.x | Rate limiting | Prevent abuse of expensive operations (billing runs). |
-| **date-fns** | 3.x | Date manipulation | Billing period calculations. Prefer over Moment.js (deprecated, mutable). |
-| **uuid** | 9.x | Unique IDs | Generate line_hash for obligation deduplication. |
+| Library                   | Version | Purpose                   | When to Use                                                               |
+| ------------------------- | ------- | ------------------------- | ------------------------------------------------------------------------- |
+| **@nestjs/config**        | 3.x     | Environment configuration | Load .env files, validate env vars with Joi schemas.                      |
+| **@nestjs/event-emitter** | 2.x     | Internal event bus        | Decouple domains (ContractPublished → ObligationScheduler).               |
+| **helmet**                | 7.x     | HTTP security headers     | Protect admin portal from XSS, clickjacking.                              |
+| **@nestjs/throttler**     | 5.x     | Rate limiting             | Prevent abuse of expensive operations (billing runs).                     |
+| **date-fns**              | 3.x     | Date manipulation         | Billing period calculations. Prefer over Moment.js (deprecated, mutable). |
+| **uuid**                  | 9.x     | Unique IDs                | Generate line_hash for obligation deduplication.                          |
 
 ### Alternatives Considered
 
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| Turborepo | Nx | Nx has more features (affected commands, plugins) but higher learning curve, heavier. Turborepo simpler for 3-5 packages. |
-| pnpm | npm/yarn | npm slower, disk inefficient. Yarn 1 deprecated. Yarn 2+ (berry) has different package resolution that breaks some tools. |
-| Prisma | TypeORM | TypeORM weaker type safety, decorator-heavy, complex queries verbose. Drizzle too new, smaller ecosystem. |
-| PostgreSQL | MySQL | MySQL lacks robust JSONB, weaker transaction isolation (REPEATABLE READ issues). MongoDB no ACID across collections. |
-| Decimal.js | dinero.js v2 | dinero.js requires custom currency definitions, overkill for simple decimal math. dinero.js v1 deprecated. |
-| Passport JWT | Auth0 SDK | Auth0 adds external dependency, cost. Passport sufficient for v1. Can migrate later. |
-| Terminus | Custom health checks | Terminus standardized, Kubernetes-ready, supports multiple indicators out-of-box. |
+| Instead of   | Could Use            | Tradeoff                                                                                                                  |
+| ------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Turborepo    | Nx                   | Nx has more features (affected commands, plugins) but higher learning curve, heavier. Turborepo simpler for 3-5 packages. |
+| pnpm         | npm/yarn             | npm slower, disk inefficient. Yarn 1 deprecated. Yarn 2+ (berry) has different package resolution that breaks some tools. |
+| Prisma       | TypeORM              | TypeORM weaker type safety, decorator-heavy, complex queries verbose. Drizzle too new, smaller ecosystem.                 |
+| PostgreSQL   | MySQL                | MySQL lacks robust JSONB, weaker transaction isolation (REPEATABLE READ issues). MongoDB no ACID across collections.      |
+| Decimal.js   | dinero.js v2         | dinero.js requires custom currency definitions, overkill for simple decimal math. dinero.js v1 deprecated.                |
+| Passport JWT | Auth0 SDK            | Auth0 adds external dependency, cost. Passport sufficient for v1. Can migrate later.                                      |
+| Terminus     | Custom health checks | Terminus standardized, Kubernetes-ready, supports multiple indicators out-of-box.                                         |
 
 **Installation:**
+
 ```bash
 # Root
 pnpm add -D turbo@2
@@ -165,6 +168,7 @@ pnpm add -D @types/react@18 @types/react-dom@18 vite@5 @vitejs/plugin-react@4
 **When to use:** ALL financial operations (amounts, rates, calculations).
 
 **Example:**
+
 ```typescript
 // apps/api/src/common/utils/decimal-helper.ts
 import Decimal from 'decimal.js';
@@ -225,6 +229,7 @@ export class DecimalHelper {
 **When to use:** Every authenticated request. Critical for multi-tenant isolation.
 
 **Example:**
+
 ```typescript
 // apps/api/src/database/prisma.service.ts
 import { Injectable, OnModuleInit, INestApplication } from '@nestjs/common';
@@ -273,12 +278,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 // apps/api/src/common/decorators/current-user.decorator.ts
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
-export const CurrentUser = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.user; // Attached by JwtAuthGuard
-  },
-);
+export const CurrentUser = createParamDecorator((data: unknown, ctx: ExecutionContext) => {
+  const request = ctx.switchToHttp().getRequest();
+  return request.user; // Attached by JwtAuthGuard
+});
 ```
 
 ### Pattern 3: RBAC with Separation of Duties
@@ -288,6 +291,7 @@ export const CurrentUser = createParamDecorator(
 **When to use:** All protected endpoints. Critical for financial approval workflows.
 
 **Example:**
+
 ```typescript
 // packages/shared-types/src/enums.ts
 export enum UserRole {
@@ -373,6 +377,7 @@ approveContract(@Param('id') id: string, @CurrentUser() user: any) {
 **When to use:** All mutable entities (Contract, Obligation, Tenant, etc.). Not needed for immutable entities (AuditLog itself).
 
 **Example:**
+
 ```typescript
 // apps/api/src/audit/audit.service.ts
 import { Injectable } from '@nestjs/common';
@@ -418,20 +423,14 @@ export class AuditService {
 }
 
 // apps/api/src/common/interceptors/audit-log.interceptor.ts
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Reflector } from '@nestjs/core';
 import { AuditService, AuditAction } from '../../audit/audit.service';
 
 export const AUDIT_KEY = 'audit';
-export const Audit = (entityType: string) =>
-  SetMetadata(AUDIT_KEY, entityType);
+export const Audit = (entityType: string) => SetMetadata(AUDIT_KEY, entityType);
 
 @Injectable()
 export class AuditLogInterceptor implements NestInterceptor {
@@ -479,6 +478,7 @@ export class AuditLogInterceptor implements NestInterceptor {
 **When to use:** Every deployment. Kubernetes requires /health/liveness and /health/readiness endpoints.
 
 **Example:**
+
 ```typescript
 // apps/api/src/health/health.controller.ts
 import { Controller, Get } from '@nestjs/common';
@@ -531,6 +531,7 @@ export class HealthController {
 **When to use:** All API endpoints.
 
 **Example:**
+
 ```typescript
 // apps/api/src/main.ts
 import { NestFactory } from '@nestjs/core';
@@ -542,11 +543,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Global validation pipe
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   // Swagger setup
   const config = new DocumentBuilder()
@@ -616,17 +619,17 @@ export class CreateUserDto {
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Password hashing | Custom hashing algorithm, MD5, SHA256 | bcrypt with work factor 10-12 | Salting, key stretching, timing-attack resistance. Custom crypto always has vulnerabilities. |
-| JWT token generation | Manual base64 encoding, custom signing | @nestjs/jwt with passport-jwt | Standard compliant, signature verification, expiration handling. |
-| Request validation | Manual if/else checks, custom validators | class-validator + class-transformer | Decorator-based, comprehensive rules, type coercion, nested validation. |
-| Health checks | Custom ping endpoints, manual DB queries | @nestjs/terminus | Standardized format, multiple indicators, Kubernetes-compatible. |
-| API documentation | Manually written OpenAPI YAML | @nestjs/swagger decorators | Auto-sync with code, zero maintenance, type-safe. |
-| Financial arithmetic | Native JavaScript operators (+, *, /) | Decimal.js | Exact decimal math, no floating-point errors, immutable API. |
-| Multi-tenant query filtering | Manual WHERE clauses in every query | Prisma middleware with CLS context | Centralized, prevents accidental leaks, consistent across codebase. |
-| Database migrations | Manual SQL scripts, ALTER TABLE commands | Prisma Migrate | Version control, rollback support, type-safe schema. |
-| Enum management | String literals, magic strings | TypeScript enums in shared-types package | Type safety, single source of truth, refactor-safe. |
+| Problem                      | Don't Build                              | Use Instead                              | Why                                                                                          |
+| ---------------------------- | ---------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Password hashing             | Custom hashing algorithm, MD5, SHA256    | bcrypt with work factor 10-12            | Salting, key stretching, timing-attack resistance. Custom crypto always has vulnerabilities. |
+| JWT token generation         | Manual base64 encoding, custom signing   | @nestjs/jwt with passport-jwt            | Standard compliant, signature verification, expiration handling.                             |
+| Request validation           | Manual if/else checks, custom validators | class-validator + class-transformer      | Decorator-based, comprehensive rules, type coercion, nested validation.                      |
+| Health checks                | Custom ping endpoints, manual DB queries | @nestjs/terminus                         | Standardized format, multiple indicators, Kubernetes-compatible.                             |
+| API documentation            | Manually written OpenAPI YAML            | @nestjs/swagger decorators               | Auto-sync with code, zero maintenance, type-safe.                                            |
+| Financial arithmetic         | Native JavaScript operators (+, \*, /)   | Decimal.js                               | Exact decimal math, no floating-point errors, immutable API.                                 |
+| Multi-tenant query filtering | Manual WHERE clauses in every query      | Prisma middleware with CLS context       | Centralized, prevents accidental leaks, consistent across codebase.                          |
+| Database migrations          | Manual SQL scripts, ALTER TABLE commands | Prisma Migrate                           | Version control, rollback support, type-safe schema.                                         |
+| Enum management              | String literals, magic strings           | TypeScript enums in shared-types package | Type safety, single source of truth, refactor-safe.                                          |
 
 **Key insight:** Security, precision, and data isolation are too critical to hand-roll. Use battle-tested libraries. Custom solutions miss edge cases that experts solved years ago. Hand-rolled auth has vulnerabilities. Hand-rolled decimal math has rounding errors. Hand-rolled multi-tenancy has data leaks.
 
@@ -639,6 +642,7 @@ export class CreateUserDto {
 **Why it happens:** JavaScript uses IEEE 754 double-precision floats. 0.1 cannot be represented exactly in binary, just like 1/3 cannot be represented exactly in decimal (0.333...).
 
 **How to avoid:**
+
 - Use Decimal.js for ALL monetary values, rates, percentages
 - Prisma schema: `amount Decimal @db.Decimal(19, 4)` (19 total digits, 4 decimal places)
 - Create DecimalHelper utility wrapper (see Pattern 1)
@@ -646,12 +650,14 @@ export class CreateUserDto {
 - NEVER convert Decimal to number until final display step
 
 **Warning signs:**
+
 - Invoice amounts end in ...0004 or ...9999
 - Sum of line items ≠ total
 - Reconciliation reports show penny discrepancies
 - Unit tests with 0.1 + 0.2 === 0.3 assertions fail
 
 **Test to verify:**
+
 ```typescript
 // apps/api/src/common/utils/decimal-helper.spec.ts
 describe('DecimalHelper', () => {
@@ -673,6 +679,7 @@ describe('DecimalHelper', () => {
 **Why it happens:** Inside a Docker container, `localhost` refers to the container itself, not the host machine. PostgreSQL runs in separate container (postgres:5432).
 
 **How to avoid:**
+
 - Use service name from docker-compose.yml as hostname
 - Correct: `DATABASE_URL=postgresql://user:pass@postgres:5432/db`
 - Wrong: `DATABASE_URL=postgresql://user:pass@localhost:5432/db`
@@ -680,11 +687,13 @@ describe('DecimalHelper', () => {
 - Document in README.md for team
 
 **Warning signs:**
+
 - Works with `npm run start:dev` but fails in Docker
 - Connection refused errors to port 5432 or 6379
 - Health check /health/readiness fails immediately on container start
 
 **Example docker-compose.yml:**
+
 ```yaml
 services:
   postgres:
@@ -694,9 +703,9 @@ services:
       POSTGRES_USER: dev
       POSTGRES_PASSWORD: devpass
     ports:
-      - "5432:5432"
+      - '5432:5432'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dev"]
+      test: ['CMD-SHELL', 'pg_isready -U dev']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -719,6 +728,7 @@ services:
 **Why it happens:** Urgent hotfix, debugging in production, misunderstanding of migration workflow.
 
 **How to avoid:**
+
 - NEVER run manual SQL in environments (staging, production)
 - All schema changes via Prisma Migrate: `prisma migrate dev`
 - Use `--create-only` flag to review migration SQL before applying
@@ -726,12 +736,14 @@ services:
 - Enable migration locking in CI/CD (prevent concurrent migrations)
 
 **Warning signs:**
+
 - `prisma migrate dev` errors: "Column already exists"
 - `prisma migrate deploy` fails in CI/CD
 - Prisma Client types don't match database schema
 - Team reports "schema.prisma doesn't match database"
 
 **Recovery process:**
+
 ```bash
 # If schema drift detected:
 1. prisma db pull           # Introspect current database state
@@ -748,6 +760,7 @@ services:
 **Why it happens:** .env file not in .gitignore, developer unaware of security implications, example .env.example copied without changing secrets.
 
 **How to avoid:**
+
 - Add .env to .gitignore BEFORE first commit
 - Provide .env.example template with placeholder values (JWT_SECRET=your_secret_here_change_me)
 - Use @nestjs/config validation to fail startup if secrets missing
@@ -755,11 +768,13 @@ services:
 - NEVER commit JWT_SECRET, DATABASE_URL, API keys
 
 **Warning signs:**
+
 - GitHub security alert: "Secret detected in commit"
 - Production JWT_SECRET matches local development secret
 - .env file visible in git history (`git log --all -- .env`)
 
 **Prevention code:**
+
 ```typescript
 // apps/api/src/config/env.validation.ts
 import * as Joi from 'joi';
@@ -795,18 +810,21 @@ export const envValidationSchema = Joi.object({
 **Why it happens:** Guards applied per-controller or per-route (opt-in). New endpoints added without guards. Copy-paste from public endpoint template.
 
 **How to avoid:**
+
 - Apply guards globally in main.ts: `app.useGlobalGuards(new JwtAuthGuard(), new RolesGuard())`
 - Use @Public() decorator for exceptions (login, health checks)
 - Add ESLint rule to require @Roles() decorator on all @Post/@Put/@Delete routes
 - Security audit: grep for missing @UseGuards in PR reviews
 
 **Warning signs:**
+
 - Public endpoints accessible without Authorization header
 - Auditor can modify data (should be read-only)
 - Tenant user can access other tenant data
 - Security tests fail: unauthorized access returns 200 instead of 403
 
 **Global guard setup:**
+
 ```typescript
 // apps/api/src/main.ts
 const app = await NestFactory.create(AppModule);
@@ -836,19 +854,22 @@ login(@Body() dto: LoginDto) {
 **Why it happens:** PrismaClient.$connect() called but never $disconnect(). Tests create new client per test without cleanup. Hot reload creates new instances.
 
 **How to avoid:**
+
 - Singleton PrismaService pattern (one instance per app)
 - Call enableShutdownHooks() in main.ts
 - Close connections in beforeEach/afterEach test hooks
 - Use Prisma connection pool settings (connection_limit=20)
-- Monitor active connections: SELECT count(*) FROM pg_stat_activity;
+- Monitor active connections: SELECT count(\*) FROM pg_stat_activity;
 
 **Warning signs:**
+
 - Connection pool exhausted errors
 - API slow after running for hours
 - Database reports > 100 active connections from single API instance
 - Tests fail with "Cannot connect to database" after 20+ test files
 
 **Solution:**
+
 ```typescript
 // apps/api/src/main.ts
 async function bootstrap() {
@@ -928,11 +949,11 @@ services:
       POSTGRES_USER: dev
       POSTGRES_PASSWORD: devpass
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dev -d airport_revenue"]
+      test: ['CMD-SHELL', 'pg_isready -U dev -d airport_revenue']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -941,9 +962,9 @@ services:
     image: redis:7-alpine
     container_name: airport-redis
     ports:
-      - "6379:6379"
+      - '6379:6379'
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
       timeout: 3s
       retries: 5
@@ -955,7 +976,7 @@ services:
       target: development
     container_name: airport-api
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       DATABASE_URL: postgresql://dev:devpass@postgres:5432/airport_revenue
       REDIS_URL: redis://redis:6379
@@ -1073,7 +1094,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 
 export interface JwtPayload {
-  sub: string;      // User ID
+  sub: string; // User ID
   email: string;
   role: string;
   tenantId?: string; // Optional for tenant-scoped users
@@ -1156,18 +1177,19 @@ export class AppModule {}
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| Moment.js for dates | date-fns | 2020 | Moment.js deprecated, mutable API dangerous. date-fns immutable, tree-shakeable. |
-| Bull (job queue) | BullMQ | 2021 | Bull no longer maintained. BullMQ better TypeScript support, improved Redis patterns. |
-| TypeORM | Prisma | 2021-2022 | TypeORM weak type safety, complex migrations. Prisma schema-first, better DX. |
-| Manual env validation | @nestjs/config + Joi | 2020 | Fail-fast on missing secrets. Joi schema validation catches errors at startup. |
-| Global Passport guards | Reflector-based guards | 2022 | Global guards with @Public() decorator cleaner than opt-in per route. |
-| dinero.js v1 | Decimal.js | 2023 | dinero.js v1 abandoned. Decimal.js currency-agnostic, simpler API for non-currency decimals. |
-| Separate Swagger JSON | @nestjs/swagger decorators | 2019 | Manual OpenAPI YAML out-of-sync. Decorators auto-generate from code. |
-| Custom health endpoints | @nestjs/terminus | 2020 | Terminus standardized format, Kubernetes-compatible, multiple indicators. |
+| Old Approach            | Current Approach           | When Changed | Impact                                                                                       |
+| ----------------------- | -------------------------- | ------------ | -------------------------------------------------------------------------------------------- |
+| Moment.js for dates     | date-fns                   | 2020         | Moment.js deprecated, mutable API dangerous. date-fns immutable, tree-shakeable.             |
+| Bull (job queue)        | BullMQ                     | 2021         | Bull no longer maintained. BullMQ better TypeScript support, improved Redis patterns.        |
+| TypeORM                 | Prisma                     | 2021-2022    | TypeORM weak type safety, complex migrations. Prisma schema-first, better DX.                |
+| Manual env validation   | @nestjs/config + Joi       | 2020         | Fail-fast on missing secrets. Joi schema validation catches errors at startup.               |
+| Global Passport guards  | Reflector-based guards     | 2022         | Global guards with @Public() decorator cleaner than opt-in per route.                        |
+| dinero.js v1            | Decimal.js                 | 2023         | dinero.js v1 abandoned. Decimal.js currency-agnostic, simpler API for non-currency decimals. |
+| Separate Swagger JSON   | @nestjs/swagger decorators | 2019         | Manual OpenAPI YAML out-of-sync. Decorators auto-generate from code.                         |
+| Custom health endpoints | @nestjs/terminus           | 2020         | Terminus standardized format, Kubernetes-compatible, multiple indicators.                    |
 
 **Deprecated/outdated:**
+
 - **Moment.js:** Deprecated. Use date-fns (immutable, smaller bundle).
 - **Bull (not BullMQ):** No longer maintained. Use BullMQ.
 - **dinero.js v1:** Abandoned since 2019. Use Decimal.js or dinero.js v2.
@@ -1233,6 +1255,7 @@ export class AppModule {}
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH - Core libraries (NestJS, Prisma, PostgreSQL, Decimal.js) verified with official docs and production usage patterns
 - Architecture: HIGH - Patterns (modular monolith, Prisma middleware, RBAC guards) verified with official guides and Medium articles from NestJS community
 - Pitfalls: HIGH - Common mistakes (decimal precision, Docker localhost, schema drift) documented in official guides and community post-mortems
@@ -1242,8 +1265,9 @@ export class AppModule {}
 **Valid until:** 2026-04-01 (30 days - stable technologies, minimal churn)
 
 **Notes:**
+
 - Library versions verified as of 2026-03-01 web search results
 - Prisma 5.x currently stable, Prisma 6.x in preview (use 5.x for Phase 1)
-- NestJS 10.x stable, all @nestjs/* packages should match major version
+- NestJS 10.x stable, all @nestjs/\* packages should match major version
 - Decimal.js 10.x stable, immutable API requires learning curve
 - Multi-file Prisma schema needs validation with current Prisma version before Phase 2
