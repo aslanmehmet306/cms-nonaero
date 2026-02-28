@@ -47,7 +47,7 @@ Plans:
 
 - [x] 01-01-PLAN.md — Turborepo monorepo scaffold + Docker Compose + complete Prisma schema with 20+ models + ADB seed data
 - [ ] 01-02-PLAN.md — JWT auth with refresh rotation + RBAC guards (7 roles, separation of duties) + Decimal.js precision utility + PrismaService
-- [ ] 01-03-PLAN.md — React Admin shell (Vite) + Portal stub + Prettier/ESLint code quality tooling
+- [x] 01-03-PLAN.md — React Admin shell (Vite) + Portal stub + Prettier/ESLint code quality tooling
 - [ ] 01-04-PLAN.md — Audit trail module (interceptor + before/after snapshots) + Health endpoints (DB/Redis) + Swagger/OpenAPI documentation
 
 ### Phase 2: Master Data & Formula Engine
@@ -227,7 +227,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase                           | Plans Complete | Status      | Completed |
 | ------------------------------- | -------------- | ----------- | --------- |
-| 1. Foundation & Infrastructure  | 1/4            | In Progress | -         |
+| 1. Foundation & Infrastructure  | 2/4            | In Progress | -         |
 | 2. Master Data & Formula Engine | 0/TBD          | Not started | -         |
 | 3. Contract Domain              | 0/TBD          | Not started | -         |
 | 4. Obligation & Declaration     | 0/TBD          | Not started | -         |

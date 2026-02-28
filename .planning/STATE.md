@@ -10,7 +10,7 @@ in_progress
 
 ## Current Plan
 
-Plan 2 of 4
+Plan 3 of 4
 
 ## Completed Phases
 
@@ -26,7 +26,7 @@ Plan 2 of 4
 
 ## Progress
 
-[==--------] Phase 1: 1/4 plans complete
+[=====-----] Phase 1: 2/4 plans complete
 
 ## Key Decisions
 
@@ -42,6 +42,9 @@ Plan 2 of 4
 - All 25 enums as string-value TypeScript enums for runtime safety
 - Prisma schema uses @default(uuid()) for all IDs, @db.Decimal for all monetary fields
 - Seed uses upsert for idempotent re-runnable seeding
+- ESLint v8 for .eslintrc.js legacy config format (v10 dropped support)
+- Vite proxy /api to localhost:3000 for admin-API integration
+- Prettier-first: format all files on commit, format:check for CI
 
 ## Blockers
 
@@ -59,15 +62,16 @@ Plan 2 of 4
 | Phase-Plan | Duration | Tasks | Files |
 | ---------- | -------- | ----- | ----- |
 | 01-01      | 7min     | 3     | 31    |
+| 01-03      | 3min     | 2     | 14    |
 
 ## Last Session
 
-- **Timestamp:** 2026-03-01T00:06:29+01:00
-- **Stopped at:** Completed 01-01-PLAN.md
+- **Timestamp:** 2026-02-28T23:16:38Z
+- **Stopped at:** Completed 01-03-PLAN.md
 
 ## Notes
 
-- Phase 1 execution in progress: 01-01 complete, next up: 01-02 (auth+rbac+decimal) and 01-03 (admin+quality) can run in parallel
+- Phase 1 execution in progress: 01-01 and 01-03 complete, 01-02 may be in parallel, next up: 01-04 (audit+health+swagger)
 - 4 plans: 01-01 (scaffold+schema), 01-02 (auth+rbac+decimal), 01-03 (admin+quality), 01-04 (audit+health+swagger)
 - Wave order: 01-01 (DONE) → [01-02 ∥ 01-03] → 01-04
 - Docker/PostgreSQL not installed on dev machine -- migration and seed deferred
