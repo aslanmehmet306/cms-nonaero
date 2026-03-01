@@ -10,6 +10,7 @@ import { RedisModule } from './redis/redis.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AuditModule } from './audit/audit.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AuditModule } from './audit/audit.module';
     AuthModule,
     UsersModule,
     AuditModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
