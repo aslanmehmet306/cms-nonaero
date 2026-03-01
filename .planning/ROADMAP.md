@@ -68,12 +68,14 @@ Plans:
 6. User can dry-run formulas with sample data and see calculated result before publishing
 7. Billing policy configuration exists with cut-off day, issue day, due date offset, and fiscal year settings
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — Formula engine TDD: math.js whitelist sandbox, AST security validation, timeout-protected evaluation, step-band pricing
+- [ ] 02-02-PLAN.md — Airport CRUD + Area hierarchy CRUD with tree queries + ADB seed data extension (3 terminals, 13+ units)
+- [ ] 02-03-PLAN.md — Tenant CRUD with auto-generated sequential codes (TNT-001), Stripe customer creation, and status lifecycle
+- [ ] 02-04-PLAN.md — Service Definition CRUD with versioning + Formula CRUD with dry-run + Billing Policy + seed data (12 formulas, 8 services)
 
 **Research Flags**:
 
@@ -228,7 +230,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase                           | Plans Complete | Status      | Completed |
 | ------------------------------- | -------------- | ----------- | --------- |
 | 1. Foundation & Infrastructure  | 4/4            | Complete    | 2026-03-01 |
-| 2. Master Data & Formula Engine | 0/TBD          | Not started | -         |
+| 2. Master Data & Formula Engine | 0/4            | Not started | -         |
 | 3. Contract Domain              | 0/TBD          | Not started | -         |
 | 4. Obligation & Declaration     | 0/TBD          | Not started | -         |
 | 5. Billing & Invoice            | 0/TBD          | Not started | -         |
