@@ -12,6 +12,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@shared-types/enums';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Audit } from '../common/decorators/audit.decorator';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -42,6 +43,7 @@ export class UsersController {
 
   @Post()
   @Roles(UserRole.super_admin, UserRole.airport_admin)
+  @Audit('User')
   @ApiOperation({ summary: 'Create a new user (admin only)' })
   @ApiResponse({ status: 201, description: 'User created' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
@@ -51,6 +53,7 @@ export class UsersController {
 
   @Patch(':id')
   @Roles(UserRole.super_admin, UserRole.airport_admin)
+  @Audit('User')
   @ApiOperation({ summary: 'Update a user (admin only)' })
   @ApiResponse({ status: 200, description: 'User updated' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
@@ -61,6 +64,7 @@ export class UsersController {
 
   @Delete(':id')
   @Roles(UserRole.super_admin, UserRole.airport_admin)
+  @Audit('User')
   @ApiOperation({ summary: 'Deactivate a user (soft delete, admin only)' })
   @ApiResponse({ status: 200, description: 'User deactivated' })
   @ApiResponse({ status: 403, description: 'Insufficient role' })
