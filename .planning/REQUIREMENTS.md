@@ -13,12 +13,12 @@
 - [x] **R1.1** Turborepo monorepo with NestJS API, React Admin, React Portal (stub), shared-types, formula-engine packages
 - [x] **R1.2** Docker Compose: PostgreSQL 15 + Redis 7 + API — `docker compose up` runs everything
 - [x] **R1.3** Prisma schema with 20+ models, all enums, indexes, relations — migration applied
-- **R1.4** JWT auth with 7 roles (super_admin, airport_admin, commercial_manager, finance, auditor, tenant_admin, tenant_user)
-- **R1.5** RBAC guards with separation of duties (contract creator ≠ approver)
-- **R1.6** Global Decimal.js pattern for all financial calculations (no native JS number for money)
-- **R1.7** Audit trail module logging all entity state changes
-- **R1.8** Health endpoints (liveness + readiness) with DB/Redis checks
-- **R1.9** Swagger/OpenAPI documentation for all endpoints
+- [x] **R1.4** JWT auth with 7 roles (super_admin, airport_admin, commercial_manager, finance, auditor, tenant_admin, tenant_user)
+- [x] **R1.5** RBAC guards with separation of duties (contract creator ≠ approver)
+- [x] **R1.6** Global Decimal.js pattern for all financial calculations (no native JS number for money)
+- [x] **R1.7** Audit trail module logging all entity state changes
+- [x] **R1.8** Health endpoints (liveness + readiness) with DB/Redis checks
+- [x] **R1.9** Swagger/OpenAPI documentation for all endpoints
 
 ### R2: Master Data
 

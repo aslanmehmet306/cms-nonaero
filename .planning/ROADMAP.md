@@ -13,7 +13,7 @@ This roadmap delivers a demo-ready SaaS platform for airport commercial revenue 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation & Infrastructure** - Monorepo setup, Docker, database schema, auth, audit trail
+- [x] **Phase 1: Foundation & Infrastructure** - Monorepo setup, Docker, database schema, auth, audit trail
 - [ ] **Phase 2: Master Data & Formula Engine** - Airport/area/tenant/service management with formula sandbox
 - [ ] **Phase 3: Contract Domain** - Contract lifecycle, versioning, service assignment, obligation trigger
 - [ ] **Phase 4: Obligation & Declaration** - Obligation scheduling, revenue/utility inputs, MAG settlement
@@ -46,9 +46,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 
 - [x] 01-01-PLAN.md — Turborepo monorepo scaffold + Docker Compose + complete Prisma schema with 20+ models + ADB seed data
-- [ ] 01-02-PLAN.md — JWT auth with refresh rotation + RBAC guards (7 roles, separation of duties) + Decimal.js precision utility + PrismaService
+- [x] 01-02-PLAN.md — JWT auth with refresh rotation + RBAC guards (7 roles, separation of duties) + Decimal.js precision utility + PrismaService
 - [x] 01-03-PLAN.md — React Admin shell (Vite) + Portal stub + Prettier/ESLint code quality tooling
-- [ ] 01-04-PLAN.md — Audit trail module (interceptor + before/after snapshots) + Health endpoints (DB/Redis) + Swagger/OpenAPI documentation
+- [x] 01-04-PLAN.md — Audit trail module (interceptor + before/after snapshots) + Health endpoints (DB/Redis) + Swagger/OpenAPI documentation
 
 ### Phase 2: Master Data & Formula Engine
 
@@ -227,7 +227,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase                           | Plans Complete | Status      | Completed |
 | ------------------------------- | -------------- | ----------- | --------- |
-| 1. Foundation & Infrastructure  | 2/4            | In Progress | -         |
+| 1. Foundation & Infrastructure  | 4/4            | Complete    | 2026-03-01 |
 | 2. Master Data & Formula Engine | 0/TBD          | Not started | -         |
 | 3. Contract Domain              | 0/TBD          | Not started | -         |
 | 4. Obligation & Declaration     | 0/TBD          | Not started | -         |

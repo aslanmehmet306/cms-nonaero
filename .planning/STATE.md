@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-01T10:44:42.537Z"
+status: in_progress
+stopped_at: Completed 01-04-PLAN.md (Phase 1 complete)
+last_updated: "2026-03-01T10:48:28Z"
 progress:
   total_phases: 2
   completed_phases: 0
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -24,7 +24,7 @@ in_progress
 
 ## Current Plan
 
-Plan 3 of 4
+Plan 4 of 4 (COMPLETE)
 
 ## Completed Phases
 
@@ -40,7 +40,7 @@ Plan 3 of 4
 
 ## Progress
 
-[=====-----] Phase 1: 2/4 plans complete
+[==========] Phase 1: 4/4 plans complete
 
 ## Key Decisions
 
@@ -59,6 +59,9 @@ Plan 3 of 4
 - ESLint v8 for .eslintrc.js legacy config format (v10 dropped support)
 - Vite proxy /api to localhost:3000 for admin-API integration
 - Prettier-first: format all files on commit, format:check for CI
+- Fire-and-forget audit logging (non-blocking, never breaks parent request)
+- Health endpoints excluded from /api/v1 prefix for k8s/LB compatibility
+- Swagger at /api/docs (not /api/v1/docs) with JWT Bearer auth
 
 ## Blockers
 
@@ -77,11 +80,12 @@ Plan 3 of 4
 | ---------- | -------- | ----- | ----- |
 | 01-01      | 7min     | 3     | 31    |
 | 01-03      | 3min     | 2     | 14    |
+| 01-04      | 11min    | 2     | 13    |
 
 ## Last Session
 
-- **Timestamp:** 2026-02-28T23:16:38Z
-- **Stopped at:** Phase 2 context gathered
+- **Timestamp:** 2026-03-01T10:48:28Z
+- **Stopped at:** Completed 01-04-PLAN.md (Phase 1 complete)
 
 ## Notes
 
