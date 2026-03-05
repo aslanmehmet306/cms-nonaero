@@ -16,6 +16,8 @@ import {
 import { PrismaService } from '../database/prisma.service';
 import { CreateBillingRunDto } from './dto/create-billing-run.dto';
 import { ApproveBillingRunDto } from './dto/approve-billing-run.dto';
+import { CancelTenantDto } from './dto/cancel-tenant.dto';
+import { RerunBillingRunDto } from './dto/rerun-billing-run.dto';
 import {
   validateBillingRunTransition,
   isTerminalStatus,
@@ -355,6 +357,152 @@ export class BillingService {
 
     this.logger.log(`Billing run ${id} cancelled, obligations unlinked`);
     return result;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Partial Tenant Cancellation
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Cancel specific tenants from an in-progress billing run.
+   *
+   * Unlinks obligations for the specified tenants (sets billingRunId=null).
+   * Tracks cancelled tenants in filters.cancelledTenants.
+   * If ALL tenants are cancelled, transitions the entire run to cancelled.
+   */
+  async cancelTenants(billingRunId: string, dto: CancelTenantDto) {
+    const billingRun = await this.prisma.billingRun.findUnique({
+      where: { id: billingRunId },
+    });
+
+    if (!billingRun) {
+      throw new NotFoundException(`Billing run ${billingRunId} not found`);
+    }
+
+    const currentStatus = billingRun.status as BillingRunStatus;
+    if (isTerminalStatus(currentStatus)) {
+      throw new BadRequestException(
+        `Cannot cancel tenants from billing run in terminal state '${currentStatus}'`,
+      );
+    }
+
+    // Unlink obligations for the specified tenants
+    await this.prisma.obligation.updateMany({
+      where: {
+        billingRunId,
+        tenantId: { in: dto.tenantIds },
+      },
+      data: { billingRunId: null },
+    });
+
+    // Update filters: track cancelled tenants
+    const filters = billingRun.filters as {
+      tenantIds?: string[];
+      cancelledTenants?: string[];
+    } | null;
+    const existingCancelled = filters?.cancelledTenants ?? [];
+    const updatedCancelled = [
+      ...new Set([...existingCancelled, ...dto.tenantIds]),
+    ];
+    const allTenantIds = filters?.tenantIds ?? [];
+
+    // Check if ALL tenants are now cancelled
+    const allCancelled =
+      allTenantIds.length > 0 &&
+      allTenantIds.every((tid: string) => updatedCancelled.includes(tid));
+
+    // Update filters with cancelled tenants
+    const updatedRun = await this.prisma.billingRun.update({
+      where: { id: billingRunId },
+      data: {
+        filters: { ...filters, cancelledTenants: updatedCancelled },
+      },
+    });
+
+    // If ALL tenants cancelled, transition run to cancelled
+    if (allCancelled) {
+      await this.transitionRun(billingRunId, BillingRunStatus.cancelled);
+    }
+
+    // Emit progress event with updated tenant info
+    this.eventEmitter.emit(
+      'billing.progress',
+      new BillingRunProgressEvent(
+        billingRunId,
+        currentStatus as BillingRunProgressEvent['phase'],
+        0,
+        `Cancelled tenants: ${dto.tenantIds.join(', ')}`,
+      ),
+    );
+
+    this.logger.log(
+      `Cancelled ${dto.tenantIds.length} tenant(s) from billing run ${billingRunId}` +
+        (allCancelled ? ' — all tenants cancelled, run terminated' : ''),
+    );
+
+    return updatedRun;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Re-run Billing Run
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Create a new billing run from a previous run.
+   *
+   * Run mode is determined by the previous run's status:
+   * - cancelled -> full (re-do everything)
+   * - completed -> delta (only new/changed obligations)
+   * - partial -> delta (re-run failed tenants)
+   * - rejected -> full (re-do everything)
+   *
+   * Rejects re-run from non-terminal states (still in progress).
+   */
+  async rerunBillingRun(dto: RerunBillingRunDto) {
+    const previousRun = await this.prisma.billingRun.findUnique({
+      where: { id: dto.previousRunId },
+    });
+
+    if (!previousRun) {
+      throw new NotFoundException(
+        `Previous billing run ${dto.previousRunId} not found`,
+      );
+    }
+
+    const prevStatus = previousRun.status as BillingRunStatus;
+
+    if (!isTerminalStatus(prevStatus)) {
+      throw new BadRequestException(
+        `Cannot re-run billing run in non-terminal state '${prevStatus}'. ` +
+          `Cancel or wait for completion first.`,
+      );
+    }
+
+    // Determine run mode based on previous run status
+    let runMode: BillingRunMode;
+    if (
+      prevStatus === BillingRunStatus.cancelled ||
+      prevStatus === BillingRunStatus.rejected
+    ) {
+      runMode = BillingRunMode.full;
+    } else {
+      // completed or partial -> delta
+      runMode = BillingRunMode.delta;
+    }
+
+    const filters = previousRun.filters as {
+      tenantIds?: string[];
+    } | null;
+
+    // Create new billing run reusing previous run's parameters
+    return this.createBillingRun({
+      airportId: previousRun.airportId,
+      periodStart: previousRun.periodStart.toISOString().split('T')[0],
+      periodEnd: previousRun.periodEnd.toISOString().split('T')[0],
+      tenantIds: filters?.tenantIds,
+      runMode,
+      previousRunId: dto.previousRunId,
+    });
   }
 
   // ─────────────────────────────────────────────────────────────────────────

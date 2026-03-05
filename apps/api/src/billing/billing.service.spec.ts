@@ -395,4 +395,237 @@ describe('BillingService', () => {
       );
     });
   });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // cancelTenants (05-02)
+  // ─────────────────────────────────────────────────────────────────────
+
+  describe('cancelTenants', () => {
+    const tenantId3 = 'tenant-uuid-3';
+
+    it('should remove specified tenantIds from billing run by unlinking their obligations', async () => {
+      prisma.billingRun.findUnique.mockResolvedValue({
+        id: 'run-1',
+        status: BillingRunStatus.calculating,
+        filters: { tenantIds: [tenantId1, tenantId2, tenantId3], cancelledTenants: [] },
+      });
+      prisma.obligation.updateMany.mockResolvedValue({ count: 2 });
+      prisma.billingRun.update.mockResolvedValue({
+        id: 'run-1',
+        filters: { tenantIds: [tenantId1, tenantId2, tenantId3], cancelledTenants: [tenantId1] },
+      });
+
+      await service.cancelTenants('run-1', { tenantIds: [tenantId1] });
+
+      // Should unlink obligations for the cancelled tenant
+      expect(prisma.obligation.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            billingRunId: 'run-1',
+            tenantId: { in: [tenantId1] },
+          }),
+          data: { billingRunId: null },
+        }),
+      );
+    });
+
+    it('should NOT affect other tenants obligations in the same run', async () => {
+      prisma.billingRun.findUnique.mockResolvedValue({
+        id: 'run-1',
+        status: BillingRunStatus.calculating,
+        filters: { tenantIds: [tenantId1, tenantId2], cancelledTenants: [] },
+      });
+      prisma.obligation.updateMany.mockResolvedValue({ count: 1 });
+      prisma.billingRun.update.mockResolvedValue({
+        id: 'run-1',
+        filters: { tenantIds: [tenantId1, tenantId2], cancelledTenants: [tenantId1] },
+      });
+
+      await service.cancelTenants('run-1', { tenantIds: [tenantId1] });
+
+      // The updateMany where should ONLY include the cancelled tenantId
+      expect(prisma.obligation.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            tenantId: { in: [tenantId1] },
+          }),
+        }),
+      );
+      // Ensure tenantId2 was NOT in the cancellation query
+      const updateCall = prisma.obligation.updateMany.mock.calls[0][0];
+      expect(updateCall.where.tenantId.in).not.toContain(tenantId2);
+    });
+
+    it('should transition run to cancelled if ALL tenants are cancelled', async () => {
+      prisma.billingRun.findUnique.mockResolvedValue({
+        id: 'run-1',
+        status: BillingRunStatus.calculating,
+        filters: { tenantIds: [tenantId1], cancelledTenants: [] },
+      });
+      prisma.obligation.updateMany.mockResolvedValue({ count: 1 });
+      // First update call: update filters
+      // Second findUnique + update: transition to cancelled (via transitionRun)
+      prisma.billingRun.update
+        .mockResolvedValueOnce({
+          id: 'run-1',
+          status: BillingRunStatus.calculating,
+          filters: { tenantIds: [tenantId1], cancelledTenants: [tenantId1] },
+        })
+        .mockResolvedValueOnce({
+          id: 'run-1',
+          status: BillingRunStatus.cancelled,
+        });
+      // transitionRun re-fetches the run
+      prisma.billingRun.findUnique
+        .mockResolvedValueOnce({
+          id: 'run-1',
+          status: BillingRunStatus.calculating,
+          filters: { tenantIds: [tenantId1], cancelledTenants: [] },
+        })
+        .mockResolvedValueOnce({
+          id: 'run-1',
+          status: BillingRunStatus.calculating,
+        });
+
+      const result = await service.cancelTenants('run-1', { tenantIds: [tenantId1] });
+
+      // Should have called update to set status to cancelled
+      const updateCalls = prisma.billingRun.update.mock.calls;
+      const cancellationCall = updateCalls.find(
+        (call: unknown[]) => (call[0] as Record<string, unknown>).data &&
+          ((call[0] as Record<string, Record<string, unknown>>).data.status === BillingRunStatus.cancelled),
+      );
+      expect(cancellationCall).toBeDefined();
+    });
+
+    it('should keep run in current state if some tenants remain', async () => {
+      prisma.billingRun.findUnique.mockResolvedValue({
+        id: 'run-1',
+        status: BillingRunStatus.calculating,
+        filters: { tenantIds: [tenantId1, tenantId2], cancelledTenants: [] },
+      });
+      prisma.obligation.updateMany.mockResolvedValue({ count: 1 });
+      prisma.billingRun.update.mockResolvedValue({
+        id: 'run-1',
+        status: BillingRunStatus.calculating,
+        filters: { tenantIds: [tenantId1, tenantId2], cancelledTenants: [tenantId1] },
+      });
+
+      await service.cancelTenants('run-1', { tenantIds: [tenantId1] });
+
+      // Status should NOT be changed to cancelled (tenantId2 still remains)
+      const updateCalls = prisma.billingRun.update.mock.calls;
+      // Only one update call (filter update), no transition to cancelled
+      expect(updateCalls).toHaveLength(1);
+      // The single update should NOT set status to cancelled
+      expect(updateCalls[0][0].data.status).toBeUndefined();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // rerunBillingRun (05-02)
+  // ─────────────────────────────────────────────────────────────────────
+
+  describe('rerunBillingRun', () => {
+    it('should create new run with runMode=full from cancelled run', async () => {
+      const previousRun = {
+        id: 'old-run-1',
+        airportId,
+        periodStart: new Date('2026-03-01'),
+        periodEnd: new Date('2026-03-31'),
+        status: BillingRunStatus.cancelled,
+        filters: { tenantIds: [tenantId1, tenantId2] },
+      };
+      prisma.billingRun.findUnique.mockResolvedValue(previousRun);
+      prisma.billingRun.findFirst.mockResolvedValue(null); // no active run
+      const newRun = {
+        id: 'new-run-1',
+        airportId,
+        status: BillingRunStatus.initiated,
+        runMode: BillingRunMode.full,
+        previousRunId: 'old-run-1',
+      };
+      prisma.billingRun.create.mockResolvedValue(newRun);
+
+      const result = await service.rerunBillingRun({ previousRunId: 'old-run-1' });
+
+      expect(result.runMode).toBe(BillingRunMode.full);
+      expect(prisma.billingRun.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            airportId,
+            runMode: BillingRunMode.full,
+            previousRunId: 'old-run-1',
+          }),
+        }),
+      );
+    });
+
+    it('should create new run with runMode=delta from completed run', async () => {
+      const previousRun = {
+        id: 'old-run-2',
+        airportId,
+        periodStart: new Date('2026-03-01'),
+        periodEnd: new Date('2026-03-31'),
+        status: BillingRunStatus.completed,
+        filters: { tenantIds: [] },
+      };
+      prisma.billingRun.findUnique.mockResolvedValue(previousRun);
+      prisma.billingRun.findFirst.mockResolvedValue(null);
+      const newRun = {
+        id: 'new-run-2',
+        airportId,
+        status: BillingRunStatus.initiated,
+        runMode: BillingRunMode.delta,
+        previousRunId: 'old-run-2',
+      };
+      prisma.billingRun.create.mockResolvedValue(newRun);
+
+      const result = await service.rerunBillingRun({ previousRunId: 'old-run-2' });
+
+      expect(result.runMode).toBe(BillingRunMode.delta);
+      expect(prisma.billingRun.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            runMode: BillingRunMode.delta,
+            previousRunId: 'old-run-2',
+          }),
+        }),
+      );
+    });
+
+    it('should reject re-run from non-terminal state (still in progress)', async () => {
+      prisma.billingRun.findUnique.mockResolvedValue({
+        id: 'old-run-3',
+        status: BillingRunStatus.calculating,
+      });
+
+      await expect(
+        service.rerunBillingRun({ previousRunId: 'old-run-3' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.billingRun.create).not.toHaveBeenCalled();
+    });
+
+    it('should create delta mode run from partial status (re-run failed tenants)', async () => {
+      const previousRun = {
+        id: 'old-run-4',
+        airportId,
+        periodStart: new Date('2026-03-01'),
+        periodEnd: new Date('2026-03-31'),
+        status: BillingRunStatus.partial,
+        filters: { tenantIds: [tenantId1] },
+      };
+      prisma.billingRun.findUnique.mockResolvedValue(previousRun);
+      prisma.billingRun.findFirst.mockResolvedValue(null);
+      prisma.billingRun.create.mockResolvedValue({
+        id: 'new-run-4',
+        runMode: BillingRunMode.delta,
+        previousRunId: 'old-run-4',
+      });
+
+      const result = await service.rerunBillingRun({ previousRunId: 'old-run-4' });
+
+      expect(result.runMode).toBe(BillingRunMode.delta);
+    });
+  });
 });

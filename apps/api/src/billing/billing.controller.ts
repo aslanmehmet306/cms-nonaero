@@ -15,6 +15,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { BillingService } from './billing.service';
 import { CreateBillingRunDto } from './dto/create-billing-run.dto';
 import { ApproveBillingRunDto } from './dto/approve-billing-run.dto';
+import { CancelTenantDto } from './dto/cancel-tenant.dto';
+import { RerunBillingRunDto } from './dto/rerun-billing-run.dto';
 
 @Controller('billing-runs')
 @Roles(UserRole.airport_admin, UserRole.finance, UserRole.commercial_manager)
@@ -89,5 +91,30 @@ export class BillingController {
   @Patch(':id/cancel')
   async cancel(@Param('id', ParseUUIDPipe) id: string) {
     return this.billingService.cancelBillingRun(id);
+  }
+
+  /**
+   * PATCH /:id/cancel-tenants - Cancel specific tenants from a billing run.
+   * Removes specified tenants without affecting others.
+   * If all tenants are cancelled, the entire run transitions to cancelled.
+   */
+  @Patch(':id/cancel-tenants')
+  async cancelTenants(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CancelTenantDto,
+  ) {
+    return this.billingService.cancelTenants(id, dto);
+  }
+
+  /**
+   * POST /:id/rerun - Create a new billing run from a previous (terminal) run.
+   * Cancelled/rejected -> full mode. Completed/partial -> delta mode.
+   */
+  @Post(':id/rerun')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async rerun(
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.billingService.rerunBillingRun({ previousRunId: id });
   }
 }
