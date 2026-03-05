@@ -14,6 +14,7 @@ import { CreateDeclarationDto } from './dto/create-declaration.dto';
 import { UpdateDeclarationDto } from './dto/update-declaration.dto';
 import { QueryDeclarationsDto } from './dto/query-declarations.dto';
 import { CreateDeclarationLineDto } from './dto/create-declaration-line.dto';
+import { CreateMeterReadingDto } from './dto/create-meter-reading.dto';
 import { DeclarationSubmittedEvent } from './events/declaration-submitted.event';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -679,6 +680,254 @@ export class DeclarationsService {
     }
 
     return rows;
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Meter Reading
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Submit a meter reading declaration.
+   *
+   * Process:
+   *   a. Find previous approved reading for same contract (latest validated/frozen meter_reading)
+   *   b. previousReading = previousDeclaration?.lines[0]?.grossAmount ?? 0
+   *   c. Validate: currentReading >= previousReading (negative consumption rejected)
+   *   d. consumption = currentReading - previousReading
+   *   e. Create declaration with status=submitted (auto-submit on creation)
+   *   f. Emit declaration.submitted event
+   *
+   * The declaration.submitted event triggers obligation calculation in ObligationsListener.
+   */
+  async submitMeterReading(dto: CreateMeterReadingDto) {
+    // a. Find previous approved reading for same contract
+    const previousDeclaration = await this.prisma.declaration.findFirst({
+      where: {
+        contractId: dto.contractId,
+        declarationType: DeclarationType.meter_reading,
+        status: { in: [DeclarationStatus.validated, DeclarationStatus.frozen] },
+        periodStart: { lt: new Date(dto.periodStart) },
+      },
+      orderBy: { periodStart: 'desc' },
+      include: { lines: true },
+    });
+
+    // b. Get previous reading value (from line.grossAmount = the actual meter reading)
+    const prevLine = previousDeclaration?.lines?.[0];
+    const previousReading = parseFloat(String(prevLine?.grossAmount ?? '0'));
+    const currentReading = parseFloat(dto.currentReading);
+
+    // c. Validate no negative consumption
+    if (currentReading < previousReading) {
+      throw new BadRequestException(
+        `Invalid meter reading: negative consumption detected. ` +
+          `Current reading (${currentReading}) is less than previous reading (${previousReading}). ` +
+          `Meter readings must be non-decreasing.`,
+      );
+    }
+
+    // d. Compute consumption = current - previous
+    const consumption = currentReading - previousReading;
+
+    // e. Build line metadata
+    const lineNotes = JSON.stringify({
+      meterType: dto.meterType ?? null,
+      unit: dto.unit ?? null,
+      location: dto.location ?? null,
+      previousReading: previousReading.toString(),
+    });
+
+    // f. Create declaration in submitted state (auto-submit)
+    const created = await this.prisma.declaration.create({
+      data: {
+        airportId: dto.airportId,
+        tenantId: dto.tenantId,
+        contractId: dto.contractId,
+        declarationType: DeclarationType.meter_reading,
+        periodStart: new Date(dto.periodStart),
+        periodEnd: new Date(dto.periodEnd),
+        status: DeclarationStatus.submitted,
+        submittedAt: new Date(),
+        lines: {
+          create: [
+            {
+              // grossAmount = actual current meter reading (raw value)
+              grossAmount: parseFloat(dto.currentReading).toFixed(2),
+              // amount = consumption (delta from previous)
+              deductions: '0',
+              amount: consumption.toFixed(2),
+              notes: lineNotes,
+            },
+          ],
+        },
+      },
+      include: { lines: true, attachments: true },
+    });
+
+    // g. Emit declaration.submitted event for downstream processing
+    if (this.eventEmitter) {
+      const event = new DeclarationSubmittedEvent(
+        created.id,
+        dto.contractId,
+        dto.tenantId,
+        created.periodStart,
+        created.periodEnd,
+        DeclarationType.meter_reading,
+      );
+      this.eventEmitter.emit('declaration.submitted', event);
+    }
+
+    this.logger.log(
+      `Meter reading submitted for contract ${dto.contractId}: ` +
+        `current=${currentReading}, previous=${previousReading}, consumption=${consumption}`,
+    );
+
+    return created;
+  }
+
+  /**
+   * Parse and create meter reading declarations from a CSV upload.
+   *
+   * Expected CSV columns: contractId, periodStart, periodEnd, currentReading, meterType, unit, location
+   * For each row:
+   *   - Auto-fetch previous reading (same logic as single submitMeterReading)
+   *   - Reject row if current < previous (NEGATIVE_CONSUMPTION)
+   *   - Create meter_reading declaration with status=submitted
+   *
+   * Returns { created: N, errors: [...] } summary.
+   */
+  async parseMeterReadingUpload(
+    file: Express.Multer.File,
+    airportId: string,
+    tenantId: string,
+  ): Promise<{ created: number; errors: UploadError[] }> {
+    // Parse CSV rows
+    const text = file.buffer.toString('utf-8');
+    const lines = text.split('\n').filter((l) => l.trim().length > 0);
+
+    if (lines.length < 2) {
+      return { created: 0, errors: [] };
+    }
+
+    const headers = lines[0].split(',').map((h) => h.trim());
+    const errors: UploadError[] = [];
+    let created = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      const rowIndex = i + 1; // 1-based accounting for header
+      const values = lines[i].split(',').map((v) => v.trim());
+      const row: Record<string, string> = {};
+      headers.forEach((header, idx) => {
+        row[header] = values[idx] ?? '';
+      });
+
+      const contractId = row['contractId'] ?? '';
+      const periodStart = row['periodStart'] ?? '';
+      const periodEnd = row['periodEnd'] ?? '';
+      const currentReadingStr = row['currentReading'] ?? '';
+
+      // Basic field validation
+      if (!contractId || !periodStart || !currentReadingStr) {
+        errors.push({
+          row: rowIndex,
+          field: !contractId ? 'contractId' : !periodStart ? 'periodStart' : 'currentReading',
+          rule: 'MISSING_FIELDS',
+          message: `Row ${rowIndex}: Required fields missing (contractId, periodStart, currentReading required)`,
+        });
+        continue;
+      }
+
+      const currentReading = parseFloat(currentReadingStr);
+
+      // Auto-fetch previous reading for this contract
+      let previousReading = 0;
+      try {
+        const previousDeclaration = await this.prisma.declaration.findFirst({
+          where: {
+            contractId,
+            declarationType: DeclarationType.meter_reading,
+            status: { in: [DeclarationStatus.validated, DeclarationStatus.frozen] },
+            periodStart: { lt: new Date(periodStart) },
+          },
+          orderBy: { periodStart: 'desc' },
+          include: { lines: true },
+        });
+
+        const prevLine = previousDeclaration?.lines?.[0];
+        previousReading = parseFloat(String(prevLine?.grossAmount ?? '0'));
+      } catch {
+        previousReading = 0;
+      }
+
+      // Check for negative consumption
+      if (currentReading < previousReading) {
+        errors.push({
+          row: rowIndex,
+          field: 'currentReading',
+          rule: 'NEGATIVE_CONSUMPTION',
+          message: `Row ${rowIndex}: Negative consumption detected. Current=${currentReading}, Previous=${previousReading}`,
+        });
+        continue;
+      }
+
+      const consumption = currentReading - previousReading;
+      const lineNotes = JSON.stringify({
+        meterType: row['meterType'] ?? null,
+        unit: row['unit'] ?? null,
+        location: row['location'] ?? null,
+        previousReading: previousReading.toString(),
+      });
+
+      try {
+        const newDecl = await this.prisma.declaration.create({
+          data: {
+            airportId,
+            tenantId,
+            contractId,
+            declarationType: DeclarationType.meter_reading,
+            periodStart: new Date(periodStart),
+            periodEnd: periodEnd ? new Date(periodEnd) : new Date(periodStart),
+            status: DeclarationStatus.submitted,
+            submittedAt: new Date(),
+            lines: {
+              create: [
+                {
+                  grossAmount: currentReading.toFixed(2),
+                  deductions: '0',
+                  amount: consumption.toFixed(2),
+                  notes: lineNotes,
+                },
+              ],
+            },
+          },
+          include: { lines: true },
+        });
+
+        // Emit declaration.submitted event for each row
+        if (this.eventEmitter) {
+          const event = new DeclarationSubmittedEvent(
+            newDecl.id,
+            contractId,
+            tenantId,
+            newDecl.periodStart,
+            newDecl.periodEnd,
+            DeclarationType.meter_reading,
+          );
+          this.eventEmitter.emit('declaration.submitted', event);
+        }
+
+        created++;
+      } catch {
+        errors.push({
+          row: rowIndex,
+          field: 'contractId',
+          rule: 'CREATE_FAILED',
+          message: `Row ${rowIndex}: Failed to create declaration`,
+        });
+      }
+    }
+
+    return { created, errors };
   }
 
   // ───────────────────────────────────────────────────────────────────────────

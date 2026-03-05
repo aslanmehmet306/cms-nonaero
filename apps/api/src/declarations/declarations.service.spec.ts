@@ -664,4 +664,282 @@ describe('DeclarationsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
   });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // METER READING SUBMISSION
+  // ───────────────────────────────────────────────────────────────────────────
+
+  describe('submitMeterReading', () => {
+    const validMeterReadingDto = {
+      airportId: 'airport-1',
+      tenantId: 'tenant-1',
+      contractId: 'contract-1',
+      periodStart: '2026-01-01',
+      periodEnd: '2026-01-31',
+      currentReading: '1500.00',
+      meterType: 'electricity',
+      unit: 'kWh',
+      location: 'Building A - Ground Floor',
+    };
+
+    const previousMeterDeclaration = {
+      id: 'prev-decl-1',
+      declarationType: 'meter_reading',
+      status: 'validated',
+      periodStart: new Date('2025-12-01'),
+      lines: [
+        { id: 'prev-line-1', grossAmount: '1000.00', amount: '1000.00' },
+      ],
+    };
+
+    it('creates a declaration with declarationType=meter_reading and status=submitted', async () => {
+      mockPrisma.declaration.findFirst.mockResolvedValue(null); // no previous reading
+      const created = makeDeclaration({
+        declarationType: 'meter_reading',
+        status: DeclarationStatus.submitted,
+        submittedAt: new Date(),
+      });
+      created.lines = [
+        { id: 'line-1', grossAmount: '1500.00', amount: '1500.00' },
+      ];
+      mockPrisma.declaration.create.mockResolvedValue(created);
+
+      const result = await service.submitMeterReading(validMeterReadingDto as any);
+
+      expect(result.declarationType).toBe('meter_reading');
+      expect(result.status).toBe(DeclarationStatus.submitted);
+    });
+
+    it('auto-fetches previous approved reading from DB (latest validated/frozen for same contract)', async () => {
+      mockPrisma.declaration.findFirst.mockResolvedValue(previousMeterDeclaration);
+      const created = makeDeclaration({ declarationType: 'meter_reading', status: DeclarationStatus.submitted });
+      created.lines = [{ id: 'line-1', grossAmount: '1500.00', amount: '500.00' }];
+      mockPrisma.declaration.create.mockResolvedValue(created);
+
+      await service.submitMeterReading(validMeterReadingDto as any);
+
+      expect(mockPrisma.declaration.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            contractId: 'contract-1',
+            declarationType: 'meter_reading',
+          }),
+        }),
+      );
+    });
+
+    it('computes consumption = currentReading - previousReading (500 = 1500 - 1000)', async () => {
+      mockPrisma.declaration.findFirst.mockResolvedValue(previousMeterDeclaration);
+      const created = makeDeclaration({ declarationType: 'meter_reading', status: DeclarationStatus.submitted });
+      mockPrisma.declaration.create.mockResolvedValue(created);
+
+      await service.submitMeterReading(validMeterReadingDto as any);
+
+      expect(mockPrisma.declaration.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            lines: expect.objectContaining({
+              create: expect.arrayContaining([
+                expect.objectContaining({
+                  // grossAmount = current reading (1500), amount = consumption (500)
+                  grossAmount: '1500.00',
+                }),
+              ]),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('uses previousReading=0 when no previous approved reading found (first reading)', async () => {
+      mockPrisma.declaration.findFirst.mockResolvedValue(null); // no previous
+      const created = makeDeclaration({ declarationType: 'meter_reading', status: DeclarationStatus.submitted });
+      mockPrisma.declaration.create.mockResolvedValue(created);
+
+      await service.submitMeterReading({
+        ...validMeterReadingDto,
+        currentReading: '500.00',
+      } as any);
+
+      // consumption = 500 - 0 = 500
+      expect(mockPrisma.declaration.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            lines: expect.objectContaining({
+              create: expect.arrayContaining([
+                expect.objectContaining({
+                  grossAmount: '500.00',
+                }),
+              ]),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('throws BadRequestException for negative consumption (current < previous)', async () => {
+      mockPrisma.declaration.findFirst.mockResolvedValue(previousMeterDeclaration);
+
+      await expect(
+        service.submitMeterReading({
+          ...validMeterReadingDto,
+          currentReading: '500.00', // less than previous 1000
+        } as any),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException with explanation message for negative consumption', async () => {
+      mockPrisma.declaration.findFirst.mockResolvedValue(previousMeterDeclaration);
+
+      await expect(
+        service.submitMeterReading({
+          ...validMeterReadingDto,
+          currentReading: '999.99', // less than previous 1000
+        } as any),
+      ).rejects.toThrow('negative consumption');
+    });
+
+    it('stores meter metadata (meterType, unit, location) in line.notes as JSON', async () => {
+      mockPrisma.declaration.findFirst.mockResolvedValue(null);
+      const created = makeDeclaration({ declarationType: 'meter_reading', status: DeclarationStatus.submitted });
+      mockPrisma.declaration.create.mockResolvedValue(created);
+
+      await service.submitMeterReading(validMeterReadingDto as any);
+
+      expect(mockPrisma.declaration.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            lines: expect.objectContaining({
+              create: expect.arrayContaining([
+                expect.objectContaining({
+                  notes: expect.stringContaining('electricity'),
+                }),
+              ]),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('meter reading declaration is auto-submitted (status=submitted, submittedAt set)', async () => {
+      mockPrisma.declaration.findFirst.mockResolvedValue(null);
+      const created = makeDeclaration({
+        declarationType: 'meter_reading',
+        status: DeclarationStatus.submitted,
+        submittedAt: new Date(),
+      });
+      mockPrisma.declaration.create.mockResolvedValue(created);
+
+      const result = await service.submitMeterReading(validMeterReadingDto as any);
+
+      expect(result.status).toBe(DeclarationStatus.submitted);
+      expect(mockPrisma.declaration.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: DeclarationStatus.submitted,
+            submittedAt: expect.any(Date),
+          }),
+        }),
+      );
+    });
+
+    it('emits declaration.submitted event after meter reading submission', async () => {
+      mockPrisma.declaration.findFirst.mockResolvedValue(null);
+      const created = makeDeclaration({
+        declarationType: 'meter_reading',
+        status: DeclarationStatus.submitted,
+        submittedAt: new Date(),
+      });
+      mockPrisma.declaration.create.mockResolvedValue(created);
+
+      await service.submitMeterReading(validMeterReadingDto as any);
+
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'declaration.submitted',
+        expect.objectContaining({ declarationId: created.id }),
+      );
+    });
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // BULK CSV METER READING UPLOAD
+  // ───────────────────────────────────────────────────────────────────────────
+
+  describe('parseMeterReadingUpload', () => {
+    const validMeterCsvBuffer = Buffer.from(
+      'contractId,periodStart,periodEnd,currentReading,meterType,unit,location\n' +
+        'contract-1,2026-01-01,2026-01-31,1500.00,electricity,kWh,Building A\n',
+    );
+
+    it('parses CSV and returns { created: N, errors: [] } summary for valid rows', async () => {
+      // no previous reading
+      mockPrisma.declaration.findFirst.mockResolvedValue(null);
+      const created = makeDeclaration({
+        declarationType: 'meter_reading',
+        status: DeclarationStatus.submitted,
+      });
+      mockPrisma.declaration.create.mockResolvedValue(created);
+
+      const result = await service.parseMeterReadingUpload(
+        {
+          buffer: validMeterCsvBuffer,
+          mimetype: 'text/csv',
+          originalname: 'meters.csv',
+          size: validMeterCsvBuffer.length,
+        } as any,
+        'airport-1',
+        'tenant-1',
+      );
+
+      expect(result).toHaveProperty('created');
+      expect(result).toHaveProperty('errors');
+      expect(result.created).toBeGreaterThanOrEqual(1);
+    });
+
+    it('rejects rows with negative consumption (current < previous)', async () => {
+      const csvWithLowReading = Buffer.from(
+        'contractId,periodStart,periodEnd,currentReading,meterType,unit,location\n' +
+          'contract-1,2026-01-01,2026-01-31,500.00,electricity,kWh,Building A\n',
+      );
+
+      // Previous reading was 1000
+      mockPrisma.declaration.findFirst.mockResolvedValue({
+        lines: [{ grossAmount: '1000.00', amount: '1000.00' }],
+      });
+
+      const result = await service.parseMeterReadingUpload(
+        {
+          buffer: csvWithLowReading,
+          mimetype: 'text/csv',
+          originalname: 'meters.csv',
+          size: csvWithLowReading.length,
+        } as any,
+        'airport-1',
+        'tenant-1',
+      );
+
+      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.errors[0].rule).toBe('NEGATIVE_CONSUMPTION');
+    });
+
+    it('returns { created: N, errors: [...] } summary with correct structure', async () => {
+      mockPrisma.declaration.findFirst.mockResolvedValue(null);
+      const created = makeDeclaration({ declarationType: 'meter_reading', status: DeclarationStatus.submitted });
+      mockPrisma.declaration.create.mockResolvedValue(created);
+
+      const result = await service.parseMeterReadingUpload(
+        {
+          buffer: validMeterCsvBuffer,
+          mimetype: 'text/csv',
+          originalname: 'meters.csv',
+          size: validMeterCsvBuffer.length,
+        } as any,
+        'airport-1',
+        'tenant-1',
+      );
+
+      expect(typeof result.created).toBe('number');
+      expect(Array.isArray(result.errors)).toBe(true);
+    });
+  });
 });

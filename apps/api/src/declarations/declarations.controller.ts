@@ -29,6 +29,7 @@ import { DeclarationsService } from './declarations.service';
 import { CreateDeclarationDto } from './dto/create-declaration.dto';
 import { UpdateDeclarationDto } from './dto/update-declaration.dto';
 import { QueryDeclarationsDto } from './dto/query-declarations.dto';
+import { CreateMeterReadingDto } from './dto/create-meter-reading.dto';
 
 const ALLOWED_UPLOAD_TYPES = [
   'text/csv',
@@ -67,6 +68,63 @@ export class DeclarationsController {
   @ApiResponse({ status: 200, description: 'CSV template with column headers' })
   getTemplate() {
     return this.declarationsService.getTemplate();
+  }
+
+  // ─── Meter Reading (placed before :id to avoid UUID parse collision) ──────
+
+  @Post('meter-reading')
+  @Roles(
+    UserRole.commercial_manager,
+    UserRole.finance,
+    UserRole.airport_admin,
+    UserRole.super_admin,
+    UserRole.tenant_admin,
+  )
+  @Audit('Declaration')
+  @ApiOperation({ summary: 'Submit a meter reading (creates auto-submitted declaration with consumption calculation)' })
+  @ApiResponse({ status: 201, description: 'Meter reading declaration created and submitted' })
+  @ApiResponse({ status: 400, description: 'Negative consumption or invalid data' })
+  @ApiResponse({ status: 403, description: 'Insufficient role' })
+  submitMeterReading(@Body() dto: CreateMeterReadingDto) {
+    return this.declarationsService.submitMeterReading(dto);
+  }
+
+  @Post('meter-reading/upload')
+  @Roles(
+    UserRole.commercial_manager,
+    UserRole.finance,
+    UserRole.airport_admin,
+    UserRole.super_admin,
+  )
+  @Audit('Declaration')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        cb(null, ALLOWED_UPLOAD_TYPES.includes(file.mimetype));
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        airportId: { type: 'string', format: 'uuid' },
+        tenantId: { type: 'string', format: 'uuid' },
+      },
+    },
+  })
+  @ApiOperation({ summary: 'Bulk upload meter readings from CSV file' })
+  @ApiResponse({ status: 201, description: 'Upload summary with created count and per-row errors' })
+  uploadMeterReadings(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('airportId') airportId: string,
+    @Body('tenantId') tenantId: string,
+  ) {
+    return this.declarationsService.parseMeterReadingUpload(file, airportId, tenantId);
   }
 
   @Get(':id')
