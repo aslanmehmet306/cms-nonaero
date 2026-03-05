@@ -3,28 +3,28 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed Phase 4 (Obligation Declaration) — all 4/4 plans done
-last_updated: "2026-03-05T19:30:00.000Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-05T20:55:48.676Z"
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 4
-  total_plans: 16
-  completed_plans: 16
+  total_plans: 20
+  completed_plans: 17
 ---
 
 # Project State
 
 ## Current Phase
 
-Phase 4: Obligation Declaration — COMPLETE
+Phase 5: Billing & Invoice
 
 ## Phase Status
 
-complete
+in_progress
 
 ## Current Plan
 
-All 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
+Plan 2 of 4 (05-01 done, 05-02 next)
 
 ## Completed Phases
 
@@ -47,6 +47,7 @@ All 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
 [==========] Phase 2: 4/4 plans complete (02-01, 02-02, 02-03, 02-04 done)
 [==========] Phase 3: 4/4 plans complete (03-01 + 03-02 + 03-03 + 03-04 done)
 [==========] Phase 4: 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
+[==--------] Phase 5: 1/4 plans complete (05-01 done)
 
 ## Key Decisions
 
@@ -119,6 +120,7 @@ All 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
 - 2026-03-05: 04-02 complete — DeclarationsModule with 5-state machine, CSV/Excel bulk upload, 6 validation rules, attachment upload, declaration.submitted event, 26 new tests pass (249 total)
 - 2026-03-05: 04-03 complete — Formula evaluation engine (calculateObligation), proration, meter reading submission, bulk CSV upload, ObligationCalculatedEvent, declaration.submitted listener, 21 new tests added
 - 2026-03-05: 04-04 complete — SettlementModule with MAG monthly settlement, year-end true-up, obligation.calculated event wiring, seed data with demo declarations + meter readings, 10 new tests (281 total), Phase 4 fully done
+- 2026-03-05: 05-01 complete — BillingModule with BullMQ pipeline, 10-state machine, Bull Board, concurrency enforcement, contract snapshot, 13 new tests (294 total)
 
 ## Performance Metrics
 
@@ -139,6 +141,7 @@ All 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
 | 04-02      | 5min     | 2     | 15    |
 | 04-03      | 10min    | 2     | 10    |
 | 04-04      | 8min     | 2     | 8     |
+| 05-01      | 5min     | 1     | 14    |
 
 ## Key Decisions (04-03 additions)
 
@@ -163,10 +166,20 @@ All 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
 - calculateProration checks date===1 AND same month/year for the 1.0 shortcut to avoid false positives
 - serviceDefinitionId made nullable (String?) on Obligation to support MAG obligations (plan 04-04)
 
+## Key Decisions (05-01 additions)
+
+- BullModule.forRoot uses connection config (host/port) not REDIS_CLIENT ioredis instance — BullMQ creates own Redis connections
+- Bull Board route /admin/queues excluded from /api/v1 global prefix alongside health endpoints
+- rawBody enabled in NestFactory.create for future Stripe webhook signature verification (05-03)
+- Concurrency enforcement via findFirst where status NOT IN terminal statuses (R8.7)
+- Contract snapshot captures full contract+services+areas as JSONB at billing time for audit trail
+- Delta mode scope excludes obligations with non-null invoiceLogId
+- Mailpit added to docker-compose for local SMTP testing in notification plan (05-04)
+
 ## Last Session
 
-- **Timestamp:** 2026-03-05T19:30:00Z
-- **Stopped at:** Completed Phase 4 (all 4/4 plans done) — ready for Phase 5 (Billing)
+- **Timestamp:** 2026-03-05T20:54:00Z
+- **Stopped at:** Completed 05-01-PLAN.md
 
 ## Notes
 
