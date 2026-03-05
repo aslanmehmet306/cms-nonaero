@@ -439,6 +439,259 @@ async function main() {
     console.log('Billing policy already exists, skipping');
   }
 
+  // 6. Formulas — 12 covering all 6 formula types (all published)
+  // ---------------------------------------------------------------------------
+  const formulaDefs = [
+    {
+      code: 'RENT-FIXED',
+      name: 'Fixed Rent',
+      formulaType: 'arithmetic' as const,
+      expression: 'area_m2 * rate_per_m2',
+      variables: {
+        area_m2: 'Area in square meters',
+        rate_per_m2: 'Monthly rate per m2',
+      },
+    },
+    {
+      code: 'RENT-INDEXED',
+      name: 'Indexed Rent',
+      formulaType: 'escalation' as const,
+      expression: 'area_m2 * rate_per_m2 * (1 + index_rate)',
+      variables: {
+        area_m2: 'Area in m2',
+        rate_per_m2: 'Base rate per m2',
+        index_rate: 'Annual escalation rate',
+      },
+    },
+    {
+      code: 'REVSHARE-FLAT',
+      name: 'Revenue Share - Flat',
+      formulaType: 'revenue_share' as const,
+      expression: 'revenue * rate',
+      variables: {
+        revenue: 'Monthly gross revenue',
+        rate: 'Revenue share percentage (e.g. 0.07 = 7%)',
+      },
+    },
+    {
+      code: 'REVSHARE-TIERED',
+      name: 'Revenue Share - Tiered Step Band',
+      formulaType: 'step_band' as const,
+      expression: 'revenue * rate',
+      variables: {
+        revenue: 'Monthly gross revenue',
+        bands: [
+          { from: 0, to: 100000, rate: 0.05 },
+          { from: 100000, to: 300000, rate: 0.08 },
+          { from: 300000, to: 999999999, rate: 0.1 },
+        ],
+      },
+    },
+    {
+      code: 'REVSHARE-CONDITIONAL',
+      name: 'Revenue Share - Conditional Rate',
+      formulaType: 'conditional' as const,
+      expression: 'revenue > 100000 ? revenue * 0.08 : revenue * 0.05',
+      variables: {
+        revenue: 'Monthly gross revenue',
+      },
+    },
+    {
+      code: 'SERVICE-FIXED',
+      name: 'Fixed Service Charge',
+      formulaType: 'arithmetic' as const,
+      expression: 'monthly_amount',
+      variables: {
+        monthly_amount: 'Fixed monthly service charge amount',
+      },
+    },
+    {
+      code: 'SERVICE-AREA',
+      name: 'Area-Based Service Charge',
+      formulaType: 'arithmetic' as const,
+      expression: 'area_m2 * rate_per_m2_service',
+      variables: {
+        area_m2: 'Area in m2',
+        rate_per_m2_service: 'Service charge rate per m2',
+      },
+    },
+    {
+      code: 'UTILITY-ELEC',
+      name: 'Electricity Utility',
+      formulaType: 'arithmetic' as const,
+      expression: 'consumption * unit_rate',
+      variables: {
+        consumption: 'kWh consumed in period',
+        unit_rate: 'Price per kWh',
+      },
+    },
+    {
+      code: 'UTILITY-WATER',
+      name: 'Water Utility',
+      formulaType: 'arithmetic' as const,
+      expression: 'consumption * unit_rate',
+      variables: {
+        consumption: 'm3 consumed in period',
+        unit_rate: 'Price per m3',
+      },
+    },
+    {
+      code: 'UTILITY-GAS',
+      name: 'Gas Utility',
+      formulaType: 'arithmetic' as const,
+      expression: 'consumption * unit_rate',
+      variables: {
+        consumption: 'm3 gas consumed in period',
+        unit_rate: 'Price per m3',
+      },
+    },
+    {
+      code: 'PRORATION',
+      name: 'Proration Formula',
+      formulaType: 'proration' as const,
+      expression: 'monthly_amount * (days_occupied / days_in_period)',
+      variables: {
+        monthly_amount: 'Full month amount',
+        days_occupied: 'Days in partial period',
+        days_in_period: 'Total days in period',
+      },
+    },
+    {
+      code: 'ESCALATION-CPI',
+      name: 'CPI Escalation',
+      formulaType: 'escalation' as const,
+      expression: 'base_amount * (1 + index_rate)',
+      variables: {
+        base_amount: 'Previous period amount',
+        index_rate: 'CPI adjustment rate',
+      },
+    },
+  ];
+
+  const createdFormulas: Record<string, string> = {};
+
+  for (const f of formulaDefs) {
+    // Use upsert by airportId+code unique pair
+    const formula = await prisma.formula.upsert({
+      where: {
+        // Note: no compound unique index on formula — use findFirst + create pattern
+        id: (
+          await prisma.formula
+            .findFirst({ where: { airportId: airport.id, code: f.code } })
+            .then((r) => r?.id ?? 'non-existent-placeholder')
+        ),
+      },
+      update: {},
+      create: {
+        airportId: airport.id,
+        code: f.code,
+        name: f.name,
+        formulaType: f.formulaType,
+        expression: f.expression,
+        variables: f.variables,
+        status: 'published',
+        version: 1,
+        publishedAt: new Date('2026-01-01'),
+      },
+    });
+    createdFormulas[f.code] = formula.id;
+  }
+
+  console.log(`Formulas: ${formulaDefs.length} seeded`);
+
+  // 7. Service Definitions — 8 linked to formulas (all published)
+  // ---------------------------------------------------------------------------
+  const serviceDefs = [
+    {
+      code: 'SVC-RENT-FIXED',
+      name: 'Fixed Rent Service',
+      serviceType: 'rent' as const,
+      formulaCode: 'RENT-FIXED',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-RENT-INDEXED',
+      name: 'Indexed Rent Service',
+      serviceType: 'rent' as const,
+      formulaCode: 'RENT-INDEXED',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-REVSHARE-FLAT',
+      name: 'Revenue Share - Flat Service',
+      serviceType: 'revenue_share' as const,
+      formulaCode: 'REVSHARE-FLAT',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-REVSHARE-TIERED',
+      name: 'Revenue Share - Tiered Service',
+      serviceType: 'revenue_share' as const,
+      formulaCode: 'REVSHARE-TIERED',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-CAM',
+      name: 'Common Area Maintenance',
+      serviceType: 'service_charge' as const,
+      formulaCode: 'SERVICE-AREA',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-ELEC',
+      name: 'Electricity Service',
+      serviceType: 'utility' as const,
+      formulaCode: 'UTILITY-ELEC',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-WATER',
+      name: 'Water Service',
+      serviceType: 'utility' as const,
+      formulaCode: 'UTILITY-WATER',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-GAS',
+      name: 'Gas Service',
+      serviceType: 'utility' as const,
+      formulaCode: 'UTILITY-GAS',
+      defaultBillingFreq: 'quarterly' as const,
+    },
+  ];
+
+  for (const s of serviceDefs) {
+    const formulaId = createdFormulas[s.formulaCode];
+    if (!formulaId) {
+      console.warn(`Formula ${s.formulaCode} not found, skipping service ${s.code}`);
+      continue;
+    }
+
+    const existing = await prisma.serviceDefinition.findFirst({
+      where: { airportId: airport.id, code: s.code },
+    });
+
+    if (!existing) {
+      await prisma.serviceDefinition.create({
+        data: {
+          airportId: airport.id,
+          code: s.code,
+          name: s.name,
+          serviceType: s.serviceType,
+          formulaId,
+          defaultCurrency: 'TRY',
+          defaultBillingFreq: s.defaultBillingFreq,
+          status: 'published',
+          version: 1,
+          effectiveFrom: new Date('2026-01-01'),
+          publishedAt: new Date('2026-01-01'),
+        },
+      });
+    }
+  }
+
+  console.log(`Service definitions: ${serviceDefs.length} seeded`);
+
   console.log('Seeding completed successfully!');
 }
 

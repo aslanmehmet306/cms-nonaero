@@ -11,19 +11,19 @@ import {
 export class CreateBillingPolicyDto {
   @ApiProperty({ description: 'Airport ID (UUID)' })
   @IsUUID()
-  airportId: string;
+  airportId!: string;
 
   @ApiProperty({ description: 'Day of month when billing period cuts off (1-28)', minimum: 1, maximum: 28 })
   @IsInt()
   @Min(1)
   @Max(28)
-  cutOffDay: number;
+  cutOffDay!: number;
 
   @ApiProperty({ description: 'Day of month when invoices are issued (1-28)', minimum: 1, maximum: 28 })
   @IsInt()
   @Min(1)
   @Max(28)
-  issueDay: number;
+  issueDay!: number;
 
   @ApiPropertyOptional({
     description: 'Number of days from issue date to due date (1-90, default 30)',
@@ -87,5 +87,5 @@ export class CreateBillingPolicyDto {
 
   @ApiProperty({ description: 'Policy effective from date (ISO date string)' })
   @IsDateString()
-  effectiveFrom: string;
+  effectiveFrom!: string;
 }

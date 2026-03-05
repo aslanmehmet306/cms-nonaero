@@ -12,25 +12,25 @@ import { BillingFrequency, ServiceType } from '@shared-types/enums';
 export class CreateServiceDto {
   @ApiProperty({ description: 'Airport ID (UUID)' })
   @IsUUID()
-  airportId: string;
+  airportId!: string;
 
   @ApiProperty({ description: 'Unique service code (e.g. FIXED-RENT)' })
   @IsString()
   @IsNotEmpty()
-  code: string;
+  code!: string;
 
   @ApiProperty({ description: 'Human-readable service name' })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @ApiProperty({ enum: ServiceType, description: 'Service type' })
   @IsEnum(ServiceType)
-  serviceType: ServiceType;
+  serviceType!: ServiceType;
 
   @ApiProperty({ description: 'Formula ID (UUID) — must reference existing formula' })
   @IsUUID()
-  formulaId: string;
+  formulaId!: string;
 
   @ApiPropertyOptional({ description: 'Default currency code (default: TRY)', default: 'TRY' })
   @IsOptional()
@@ -39,7 +39,7 @@ export class CreateServiceDto {
 
   @ApiProperty({ enum: BillingFrequency, description: 'Default billing frequency' })
   @IsEnum(BillingFrequency)
-  defaultBillingFreq: BillingFrequency;
+  defaultBillingFreq!: BillingFrequency;
 
   @ApiPropertyOptional({ description: 'Tax class code (optional)' })
   @IsOptional()
@@ -48,7 +48,7 @@ export class CreateServiceDto {
 
   @ApiProperty({ description: 'Effective from date (ISO date string)' })
   @IsDateString()
-  effectiveFrom: string;
+  effectiveFrom!: string;
 
   @ApiPropertyOptional({ description: 'Effective to date (ISO date string, optional)' })
   @IsOptional()
