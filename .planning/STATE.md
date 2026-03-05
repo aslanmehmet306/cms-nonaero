@@ -3,20 +3,20 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 01-04-PLAN.md (Phase 1 complete)
-last_updated: "2026-03-01T10:48:28Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-05T10:41:57Z"
 progress:
   total_phases: 2
   completed_phases: 0
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 8
+  completed_plans: 5
 ---
 
 # Project State
 
 ## Current Phase
 
-Phase 1: Foundation & Infrastructure
+Phase 2: Master Data & Formula Engine
 
 ## Phase Status
 
@@ -24,11 +24,11 @@ in_progress
 
 ## Current Plan
 
-Plan 4 of 4 (COMPLETE)
+Plan 2 of 4 (02-02 COMPLETE)
 
 ## Completed Phases
 
-(none)
+- Phase 1: Foundation & Infrastructure (4/4 plans)
 
 ## Session Log
 
@@ -41,6 +41,7 @@ Plan 4 of 4 (COMPLETE)
 ## Progress
 
 [==========] Phase 1: 4/4 plans complete
+[===-------] Phase 2: 2/4 plans complete (02-01, 02-02 done)
 
 ## Key Decisions
 
@@ -62,6 +63,9 @@ Plan 4 of 4 (COMPLETE)
 - Fire-and-forget audit logging (non-blocking, never breaks parent request)
 - Health endpoints excluded from /api/v1 prefix for k8s/LB compatibility
 - Swagger at /api/docs (not /api/v1/docs) with JWT Bearer auth
+- Area depth validated via AREA_TYPE_DEPTH map (O(1) lookup, no recursive ancestor traversal)
+- UpdateAreaDto uses OmitType to make airportId and parentAreaId truly immutable after creation
+- GET /areas/roots route placed before GET /areas/:id to avoid UUID parse collision
 
 ## Blockers
 
@@ -73,6 +77,9 @@ Plan 4 of 4 (COMPLETE)
 - 2026-03-01: Phase 1 planning completed — 4 plans in 3 waves
 - 2026-03-01: Plan-checker found 4 blockers, 5 warnings — all fixed
 - 2026-03-01: Plans revised: Task split, PostgreSQL 15 fix, auth paths per API docs, unit tests added, health prefix excluded, shared Redis module
+- 2026-03-05: Phase 2 planning complete — 4 plans in 2 waves
+- 2026-03-05: 02-01 (Tenant CRUD) complete
+- 2026-03-05: 02-02 (Airport + Area CRUD with tree queries) complete — 23 tests pass, API builds
 
 ## Performance Metrics
 
@@ -81,11 +88,12 @@ Plan 4 of 4 (COMPLETE)
 | 01-01      | 7min     | 3     | 31    |
 | 01-03      | 3min     | 2     | 14    |
 | 01-04      | 11min    | 2     | 13    |
+| 02-02      | 4min     | 2     | 14    |
 
 ## Last Session
 
-- **Timestamp:** 2026-03-01T10:48:28Z
-- **Stopped at:** Completed 01-04-PLAN.md (Phase 1 complete)
+- **Timestamp:** 2026-03-05T10:41:57Z
+- **Stopped at:** Completed 02-02-PLAN.md
 
 ## Notes
 
@@ -94,3 +102,4 @@ Plan 4 of 4 (COMPLETE)
 - Wave order: 01-01 (DONE) → [01-02 ∥ 01-03] → 01-04
 - Docker/PostgreSQL not installed on dev machine -- migration and seed deferred
 - 7-phase roadmap follows critical path: Foundation → Master Data → Contract → Obligation → Billing → Invoice → Admin UI
+- Phase 2 wave order: [02-01 ∥ 02-02] → [02-03 ∥ 02-04]
