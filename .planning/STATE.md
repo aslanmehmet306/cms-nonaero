@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-02-PLAN.md — ContractArea and ContractService junction modules
-last_updated: "2026-03-05T13:37:32.058Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-05T13:36:05Z"
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -24,7 +24,7 @@ in_progress
 
 ## Current Plan
 
-Plan 2 of 4 complete (03-02 done; 03-01, 03-03, 03-04 remaining)
+Plan 2 of 4 complete (03-01 + 03-02 done; 03-03, 03-04 remaining)
 
 ## Completed Phases
 
@@ -43,7 +43,7 @@ Plan 2 of 4 complete (03-02 done; 03-01, 03-03, 03-04 remaining)
 
 [==========] Phase 1: 4/4 plans complete
 [==========] Phase 2: 4/4 plans complete (02-01, 02-02, 02-03, 02-04 done)
-[==--------] Phase 3: 1/4 plans complete (03-02 done; 03-01, 03-03, 03-04 pending)
+[====------] Phase 3: 2/4 plans complete (03-01 + 03-02 done; 03-03, 03-04 pending)
 
 ## Key Decisions
 
@@ -80,6 +80,9 @@ Plan 2 of 4 complete (03-02 done; 03-01, 03-03, 03-04 remaining)
 - Draft-only mutations: all area and service assignment changes restricted to draft contracts; rejects non-draft with BadRequestException
 - Override formula validation requires published status AND valid AST via validateFormulaAST — two-step check before accepting overrideFormulaId
 - ContractAreasModule and ContractServicesModule not registered in AppModule yet — wiring plan (03-04) registers all Phase 3 modules together
+- EventEmitter2 injected with @Optional() so ContractsModule works before EventEmitterModule registered globally
+- Amendment effectiveFrom validation uses UTC (getUTCDate()) to avoid timezone-dependent date boundary bugs
+- generateNextContractNumber queries version=1 only for unique CNT-xxx numbering per contract
 
 ## Blockers
 
@@ -98,6 +101,7 @@ Plan 2 of 4 complete (03-02 done; 03-01, 03-03, 03-04 remaining)
 - 2026-03-05: 02-03 complete — Tenant CRUD with Stripe integration, auto-code, status lifecycle, 17 tests pass
 - 2026-03-05: 02-04 complete — Formula/Service/BillingPolicy CRUD, 41 new tests, 12 formulas + 8 services seeded, 124 total tests pass
 - 2026-03-05: 03-02 complete — ContractArea + ContractService junction modules, draft-only mutations, formula override validation, 24 tests pass
+- 2026-03-05: 03-01 complete — Contract CRUD, 8-state machine, amendment versioning, version history diffs, snapshot helper, 23 tests pass (171 total)
 
 ## Performance Metrics
 
@@ -111,11 +115,12 @@ Plan 2 of 4 complete (03-02 done; 03-01, 03-03, 03-04 remaining)
 | 02-03      | 4min     | 1     | 10    |
 | 02-04      | 11min    | 3     | 24    |
 | 03-02      | 3min     | 2     | 11    |
+| 03-01      | 5min     | 1     | 11    |
 
 ## Last Session
 
-- **Timestamp:** 2026-03-05T11:00:00Z
-- **Stopped at:** Completed 03-02-PLAN.md — ContractArea and ContractService junction modules
+- **Timestamp:** 2026-03-05T13:36:05Z
+- **Stopped at:** Completed 03-01-PLAN.md
 
 ## Notes
 
