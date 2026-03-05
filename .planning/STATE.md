@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-03-05T13:45:59.500Z"
+stopped_at: Completed 03-04-PLAN.md
+last_updated: "2026-03-05T13:54:25.745Z"
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 12
-  completed_plans: 11
+  completed_plans: 12
 ---
 
 # Project State
@@ -20,16 +20,17 @@ Phase 3: Contract Domain
 
 ## Phase Status
 
-in_progress
+complete
 
 ## Current Plan
 
-Plan 3 of 4 complete (03-01 + 03-02 + 03-03 done; 03-04 remaining)
+Plan 4 of 4 complete (03-01 + 03-02 + 03-03 + 03-04 done)
 
 ## Completed Phases
 
 - Phase 1: Foundation & Infrastructure (4/4 plans)
 - Phase 2: Master Data & Formula Engine (4/4 plans)
+- Phase 3: Contract Domain (4/4 plans)
 
 ## Session Log
 
@@ -43,7 +44,7 @@ Plan 3 of 4 complete (03-01 + 03-02 + 03-03 done; 03-04 remaining)
 
 [==========] Phase 1: 4/4 plans complete
 [==========] Phase 2: 4/4 plans complete (02-01, 02-02, 02-03, 02-04 done)
-[=======---] Phase 3: 3/4 plans complete (03-01 + 03-02 + 03-03 done; 03-04 pending)
+[==========] Phase 3: 4/4 plans complete (03-01 + 03-02 + 03-03 + 03-04 done)
 
 ## Key Decisions
 
@@ -66,7 +67,7 @@ Plan 3 of 4 complete (03-01 + 03-02 + 03-03 done; 03-04 remaining)
 - Health endpoints excluded from /api/v1 prefix for k8s/LB compatibility
 - Swagger at /api/docs (not /api/v1/docs) with JWT Bearer auth
 - Stripe customer created at tenant creation with uuidv4 idempotency key; stripeCustomerId=null when Stripe not configured
-- All tenant status transitions fully reversible (active<->suspended<->deactivated); cascade to contracts deferred Phase 3
+- All tenant status transitions fully reversible (active<->suspended<->deactivated); cascade to contracts implemented Phase 3 via updateMany
 - taxId and code are immutable after tenant creation (excluded from UpdateTenantDto)
 - Formula sandbox via scope injection (not math.import override): blocks dangerous functions without breaking internal math.js evaluate calls
 - Float normalization with toPrecision(15) before Decimal wrapping: achieves 0.1+0.2=0.3 exactly without Decimal constructor preserving JS float noise
@@ -85,6 +86,9 @@ Plan 3 of 4 complete (03-01 + 03-02 + 03-03 done; 03-04 remaining)
 - Obligation date arithmetic uses local-time Date constructors (new Date(year, month, day)) throughout service and tests
 - Amendment effectiveFrom validation uses UTC (getUTCDate()) to avoid timezone-dependent date boundary bugs
 - generateNextContractNumber queries version=1 only for unique CNT-xxx numbering per contract
+- Daily cron at 02:00 Istanbul time for contract lifecycle transitions (activation + amendment flip)
+- Tenant suspension cascades to active contracts via updateMany (not N+1); deactivated status has no cascade
+- Amendment flip uses $transaction array form for atomic old-active->amended + pending->active swap
 
 ## Blockers
 
@@ -105,6 +109,7 @@ Plan 3 of 4 complete (03-01 + 03-02 + 03-03 done; 03-04 remaining)
 - 2026-03-05: 03-02 complete — ContractArea + ContractService junction modules, draft-only mutations, formula override validation, 24 tests pass
 - 2026-03-05: 03-01 complete — Contract CRUD, 8-state machine, amendment versioning, version history diffs, snapshot helper, 23 tests pass (171 total)
 - 2026-03-05: 03-03 complete — ObligationsModule with event-driven schedule generation, type/currency mappings, read-only endpoints, all Phase 3 modules + EventEmitter registered in AppModule, 21 tests pass (192 total)
+- 2026-03-05: 03-04 complete — ContractSchedulerService with daily cron, tenant suspension cascade via updateMany, 3 demo contracts seeded, 30 new tests pass (222 total), Phase 3 fully done
 
 ## Performance Metrics
 
@@ -120,11 +125,12 @@ Plan 3 of 4 complete (03-01 + 03-02 + 03-03 done; 03-04 remaining)
 | 03-02      | 3min     | 2     | 11    |
 | 03-01      | 5min     | 1     | 11    |
 | 03-03      | 4min     | 2     | 8     |
+| 03-04      | 4min     | 2     | 8     |
 
 ## Last Session
 
-- **Timestamp:** 2026-03-05T13:44:13Z
-- **Stopped at:** Completed 03-03-PLAN.md
+- **Timestamp:** 2026-03-05T13:52:00Z
+- **Stopped at:** Completed 03-04-PLAN.md
 
 ## Notes
 

@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Infrastructure** - Monorepo setup, Docker, database schema, auth, audit trail
 - [x] **Phase 2: Master Data & Formula Engine** - Airport/area/tenant/service management with formula sandbox (completed 2026-03-05)
-- [ ] **Phase 3: Contract Domain** - Contract lifecycle, versioning, service assignment, obligation trigger
+- [x] **Phase 3: Contract Domain** - Contract lifecycle, versioning, service assignment, obligation trigger (completed 2026-03-05)
 - [ ] **Phase 4: Obligation & Declaration** - Obligation scheduling, revenue/utility inputs, MAG settlement
 - [ ] **Phase 5: Billing & Invoice** - BullMQ orchestration, Stripe integration, webhooks, notifications
 - [ ] **Phase 6: Multi-Currency & Reporting** - Exchange rates, reporting dashboard, audit trail UI
@@ -233,7 +233,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | ------------------------------- | -------------- | ----------- | --------- |
 | 1. Foundation & Infrastructure  | 4/4            | Complete    | 2026-03-01 |
 | 2. Master Data & Formula Engine | 4/4            | Complete    | 2026-03-05 |
-| 3. Contract Domain              | 3/4 | In Progress|  |
+| 3. Contract Domain              | 4/4 | Complete   | 2026-03-05 |
 | 4. Obligation & Declaration     | 0/TBD          | Not started | -         |
 | 5. Billing & Invoice            | 0/TBD          | Not started | -         |
 | 6. Multi-Currency & Reporting   | 0/TBD          | Not started | -         |
