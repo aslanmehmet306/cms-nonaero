@@ -3,20 +3,20 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Phase 03 context gathered
-last_updated: "2026-03-05T12:43:24.044Z"
+stopped_at: Completed 03-02-PLAN.md — ContractArea and ContractService junction modules
+last_updated: "2026-03-05T13:37:32.058Z"
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 12
+  completed_plans: 10
 ---
 
 # Project State
 
 ## Current Phase
 
-Phase 2: Master Data & Formula Engine
+Phase 3: Contract Domain
 
 ## Phase Status
 
@@ -24,7 +24,7 @@ in_progress
 
 ## Current Plan
 
-Plan 4 of 4 complete — Phase 2 fully complete
+Plan 2 of 4 complete (03-02 done; 03-01, 03-03, 03-04 remaining)
 
 ## Completed Phases
 
@@ -43,6 +43,7 @@ Plan 4 of 4 complete — Phase 2 fully complete
 
 [==========] Phase 1: 4/4 plans complete
 [==========] Phase 2: 4/4 plans complete (02-01, 02-02, 02-03, 02-04 done)
+[==--------] Phase 3: 1/4 plans complete (03-02 done; 03-01, 03-03, 03-04 pending)
 
 ## Key Decisions
 
@@ -76,6 +77,9 @@ Plan 4 of 4 complete — Phase 2 fully complete
 - Service publish validates linked formula is published to prevent service-formula billing inconsistency
 - BillingPolicy activate uses Prisma $transaction to atomically archive previous active policy and set new one active
 - Seed uses findFirst+create for formulas/services (no compound unique index on those models)
+- Draft-only mutations: all area and service assignment changes restricted to draft contracts; rejects non-draft with BadRequestException
+- Override formula validation requires published status AND valid AST via validateFormulaAST — two-step check before accepting overrideFormulaId
+- ContractAreasModule and ContractServicesModule not registered in AppModule yet — wiring plan (03-04) registers all Phase 3 modules together
 
 ## Blockers
 
@@ -93,6 +97,7 @@ Plan 4 of 4 complete — Phase 2 fully complete
 - 2026-03-05: 02-02 complete — Airport + Area CRUD with tree queries, 23 tests pass
 - 2026-03-05: 02-03 complete — Tenant CRUD with Stripe integration, auto-code, status lifecycle, 17 tests pass
 - 2026-03-05: 02-04 complete — Formula/Service/BillingPolicy CRUD, 41 new tests, 12 formulas + 8 services seeded, 124 total tests pass
+- 2026-03-05: 03-02 complete — ContractArea + ContractService junction modules, draft-only mutations, formula override validation, 24 tests pass
 
 ## Performance Metrics
 
@@ -105,11 +110,12 @@ Plan 4 of 4 complete — Phase 2 fully complete
 | 02-02      | 4min     | 2     | 14    |
 | 02-03      | 4min     | 1     | 10    |
 | 02-04      | 11min    | 3     | 24    |
+| 03-02      | 3min     | 2     | 11    |
 
 ## Last Session
 
 - **Timestamp:** 2026-03-05T11:00:00Z
-- **Stopped at:** Phase 03 context gathered
+- **Stopped at:** Completed 03-02-PLAN.md — ContractArea and ContractService junction modules
 
 ## Notes
 
