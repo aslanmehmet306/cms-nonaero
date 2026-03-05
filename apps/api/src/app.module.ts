@@ -12,6 +12,8 @@ import { UsersModule } from './users/users.module';
 import { AuditModule } from './audit/audit.module';
 import { HealthModule } from './health/health.module';
 import { TenantsModule } from './tenants/tenants.module';
+import { AirportsModule } from './airports/airports.module';
+import { AreasModule } from './areas/areas.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { TenantsModule } from './tenants/tenants.module';
     AuditModule,
     HealthModule,
     TenantsModule,
+    AirportsModule,
+    AreasModule,
   ],
   controllers: [AppController],
   providers: [AppService],
