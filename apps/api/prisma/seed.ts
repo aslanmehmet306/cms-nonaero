@@ -991,6 +991,77 @@ async function main() {
     }
   }
 
+  // 10. Phase 5: Demo BillingRun + Notification records
+  // ---------------------------------------------------------------------------
+  const existingBillingRun = await prisma.billingRun.findFirst({
+    where: { airportId: airport.id, runType: 'manual' },
+  });
+
+  if (!existingBillingRun) {
+    await prisma.billingRun.create({
+      data: {
+        airportId: airport.id,
+        runType: 'manual',
+        periodStart: new Date(2026, 0, 1),  // Jan 2026
+        periodEnd: new Date(2026, 0, 31),
+        status: 'completed',
+        runMode: 'full',
+        totalObligations: 5,
+        totalAmount: 125000,
+        totalInvoices: 3,
+        completedAt: new Date(),
+        contractSnapshot: { contracts: ['demo snapshot'] },
+      },
+    });
+    console.log('Phase 5 seed: Demo billing run created (completed, Jan 2026)');
+  } else {
+    console.log('Phase 5 seed: Billing run already exists, skipping');
+  }
+
+  // Demo Notification records (3 items showing different types/severities)
+  const existingNotif = await prisma.notification.findFirst({
+    where: { airportId: airport.id },
+  });
+
+  if (!existingNotif) {
+    const demoNotifications = [
+      {
+        airportId: airport.id,
+        tenantId: createdTenants['TNT-001'],
+        type: 'invoice_created' as const,
+        channel: 'both' as const,
+        title: 'Fatura Olusturuldu - INV-2026-001',
+        body: 'Ocak 2026 donemi icin faturaniz olusturulmustur.',
+        isRead: false,
+      },
+      {
+        airportId: airport.id,
+        tenantId: createdTenants['TNT-001'],
+        type: 'payment_received' as const,
+        channel: 'in_app' as const,
+        title: 'Odeme Alindi - INV-2026-001',
+        body: 'TRY 25,000.00 tutarinda odeme basariyla alindi.',
+        isRead: true,
+        readAt: new Date(),
+      },
+      {
+        airportId: airport.id,
+        type: 'billing_run_completed' as const,
+        channel: 'in_app' as const,
+        title: 'Faturalama Tamamlandi',
+        body: 'Ocak 2026 faturalama calismasi tamamlandi. 3 fatura olusturuldu.',
+        isRead: false,
+      },
+    ];
+
+    for (const notif of demoNotifications) {
+      await prisma.notification.create({ data: notif });
+    }
+    console.log('Phase 5 seed: 3 demo notification records created');
+  } else {
+    console.log('Phase 5 seed: Notifications already exist, skipping');
+  }
+
   console.log('Seeding completed successfully!');
 }
 
