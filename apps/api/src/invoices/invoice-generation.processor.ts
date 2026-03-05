@@ -36,6 +36,10 @@ export class InvoiceGenerationProcessor extends WorkerHost {
     this.logger.log(`Processing invoice generation for billing run ${billingRunId}`);
 
     try {
+      // Load billing run to get airportId for event payloads
+      const billingRun = await this.billingService.findOne(billingRunId);
+      const airportId = billingRun.airportId;
+
       // Stage 1: Transition to invoicing
       await this.billingService.transitionRun(
         billingRunId,
@@ -62,6 +66,7 @@ export class InvoiceGenerationProcessor extends WorkerHost {
         this.emitProgress(billingRunId, 'completed', 100, 'All invoices generated successfully');
         this.eventEmitter.emit('billing.completed', {
           billingRunId,
+          airportId,
           totalInvoices: result.totalInvoices,
         });
       } else if (result.successCount > 0) {
@@ -78,6 +83,7 @@ export class InvoiceGenerationProcessor extends WorkerHost {
         );
         this.eventEmitter.emit('billing.partial', {
           billingRunId,
+          airportId,
           successCount: result.successCount,
           failureCount: result.failureCount,
           errors: result.errors,
@@ -91,6 +97,7 @@ export class InvoiceGenerationProcessor extends WorkerHost {
         this.emitProgress(billingRunId, 'partial', 100, 'All invoices failed');
         this.eventEmitter.emit('billing.partial', {
           billingRunId,
+          airportId,
           successCount: 0,
           failureCount: result.failureCount,
           errors: result.errors,
