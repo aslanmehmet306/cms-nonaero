@@ -9,7 +9,7 @@ progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 20
-  completed_plans: 18
+  completed_plans: 19
 ---
 
 # Project State
@@ -24,7 +24,7 @@ in_progress
 
 ## Current Plan
 
-Plan 3 of 4 (05-01 done, 05-02 done, 05-03 next)
+Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 next)
 
 ## Completed Phases
 
@@ -47,7 +47,7 @@ Plan 3 of 4 (05-01 done, 05-02 done, 05-03 next)
 [==========] Phase 2: 4/4 plans complete (02-01, 02-02, 02-03, 02-04 done)
 [==========] Phase 3: 4/4 plans complete (03-01 + 03-02 + 03-03 + 03-04 done)
 [==========] Phase 4: 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
-[=====-----] Phase 5: 2/4 plans complete (05-01, 05-02 done)
+[=======---] Phase 5: 3/4 plans complete (05-01, 05-02, 05-03 done)
 
 ## Key Decisions
 
@@ -96,6 +96,16 @@ Plan 3 of 4 (05-01 done, 05-02 done, 05-03 next)
 - frozenToken UUID guards all declaration mutation paths (update, delete, line CRUD)
 - Batch tenant validation in upload (findMany in:{ids}) vs N individual lookups
 
+## Key Decisions (05-03 additions)
+
+- INVOICE_PROVIDER injection token for swappable Stripe/ERP/mock invoice provider implementations
+- Idempotency keys: {billingRunId}_{chargeType}_{tenantId} with _create/_item_N suffixes for each Stripe API call
+- Amounts converted to smallest currency unit via DecimalHelper.multiply(amount, 100) then Math.round() for Stripe integer constraint
+- Webhook endpoint @Public with raw body signature verification (Stripe cannot send JWT tokens)
+- Event deduplication via WebhookEventLog.stripeEventId unique constraint with processed boolean flag
+- Out-of-order webhook events handled gracefully: missing InvoiceLog logged and skipped (eventual consistency)
+- BillingService.approveBillingRun enqueues invoice-generation job with 3-attempt exponential backoff
+
 ## Blockers
 
 (none)
@@ -122,6 +132,7 @@ Plan 3 of 4 (05-01 done, 05-02 done, 05-03 next)
 - 2026-03-05: 04-04 complete — SettlementModule with MAG monthly settlement, year-end true-up, obligation.calculated event wiring, seed data with demo declarations + meter readings, 10 new tests (281 total), Phase 4 fully done
 - 2026-03-05: 05-01 complete — BillingModule with BullMQ pipeline, 10-state machine, Bull Board, concurrency enforcement, contract snapshot, 13 new tests (294 total)
 - 2026-03-06: 05-02 complete — SSE progress endpoint, partial tenant cancellation, billing run re-run (full/delta), 11 new tests (305 total)
+- 2026-03-06: 05-03 complete — InvoicesModule with Stripe provider, webhook handler, event deduplication, 22 new tests (327 total)
 
 ## Performance Metrics
 
@@ -144,6 +155,7 @@ Plan 3 of 4 (05-01 done, 05-02 done, 05-03 next)
 | 04-04      | 8min     | 2     | 8     |
 | 05-01      | 5min     | 1     | 14    |
 | 05-02      | 6min     | 2     | 8     |
+| 05-03      | 7min     | 2     | 15    |
 
 ## Key Decisions (04-03 additions)
 
@@ -188,8 +200,8 @@ Plan 3 of 4 (05-01 done, 05-02 done, 05-03 next)
 
 ## Last Session
 
-- **Timestamp:** 2026-03-06T00:03:00Z
-- **Stopped at:** Completed 05-02-PLAN.md
+- **Timestamp:** 2026-03-06T00:14:00Z
+- **Stopped at:** Completed 05-03-PLAN.md
 
 ## Notes
 
