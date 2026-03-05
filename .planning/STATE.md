@@ -134,6 +134,8 @@ Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 done) -- Phase 5 COMPLETE
 - 2026-03-06: 05-02 complete — SSE progress endpoint, partial tenant cancellation, billing run re-run (full/delta), 11 new tests (305 total)
 - 2026-03-06: 05-03 complete — InvoicesModule with Stripe provider, webhook handler, event deduplication, 22 new tests (327 total)
 - 2026-03-06: 05-04 complete — NotificationsModule with 7 Turkish email templates, SSE push, event listeners, 12 new tests (339 total), Phase 5 fully done
+- 2026-03-06: 06-01 complete — ExchangeRatesModule with TCMB rate fetch, conversion service, Prisma model
+- 2026-03-06: 06-02 complete — Entity timeline drill-down with field-level diffs, Obligation/Contract enrichment, 10 new tests (357 total)
 
 ## Performance Metrics
 
@@ -158,6 +160,7 @@ Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 done) -- Phase 5 COMPLETE
 | 05-02      | 6min     | 2     | 8     |
 | 05-03      | 7min     | 2     | 15    |
 | 05-04      | 5min     | 2     | 17    |
+| 06-02      | 3min     | 2     | 4     |
 
 ## Key Decisions (04-03 additions)
 
@@ -209,10 +212,17 @@ Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 done) -- Phase 5 COMPLETE
 - Turkish SUBJECT_MAP provides default email subjects for all notification types
 - EmailService wraps MailerService for consistent error handling and logging
 
+## Key Decisions (06-02 additions)
+
+- diffStates skips updatedAt/createdAt fields to reduce noise in audit drill-down
+- Domain enrichment uses entityType switch for Obligation and Contract, null for all others
+- Contract enrichment uses Prisma _count relation for obligationCount (single query, no N+1)
+- Timeline route /audit/timeline/ placed before /audit/entity/ to avoid NestJS route collision
+
 ## Last Session
 
-- **Timestamp:** 2026-03-06T00:23:39Z
-- **Stopped at:** Completed 05-04-PLAN.md — Phase 5 fully complete, all 20 plans across 5 phases done
+- **Timestamp:** 2026-03-06T21:54:00Z
+- **Stopped at:** Completed 06-02-PLAN.md
 
 ## Notes
 
