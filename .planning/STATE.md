@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-03-05T13:36:05Z"
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-03-05T13:45:59.500Z"
 progress:
   total_phases: 3
   completed_phases: 2
@@ -24,7 +24,7 @@ in_progress
 
 ## Current Plan
 
-Plan 2 of 4 complete (03-01 + 03-02 done; 03-03, 03-04 remaining)
+Plan 3 of 4 complete (03-01 + 03-02 + 03-03 done; 03-04 remaining)
 
 ## Completed Phases
 
@@ -43,7 +43,7 @@ Plan 2 of 4 complete (03-01 + 03-02 done; 03-03, 03-04 remaining)
 
 [==========] Phase 1: 4/4 plans complete
 [==========] Phase 2: 4/4 plans complete (02-01, 02-02, 02-03, 02-04 done)
-[====------] Phase 3: 2/4 plans complete (03-01 + 03-02 done; 03-03, 03-04 pending)
+[=======---] Phase 3: 3/4 plans complete (03-01 + 03-02 + 03-03 done; 03-04 pending)
 
 ## Key Decisions
 
@@ -79,8 +79,10 @@ Plan 2 of 4 complete (03-01 + 03-02 done; 03-03, 03-04 remaining)
 - Seed uses findFirst+create for formulas/services (no compound unique index on those models)
 - Draft-only mutations: all area and service assignment changes restricted to draft contracts; rejects non-draft with BadRequestException
 - Override formula validation requires published status AND valid AST via validateFormulaAST — two-step check before accepting overrideFormulaId
-- ContractAreasModule and ContractServicesModule not registered in AppModule yet — wiring plan (03-04) registers all Phase 3 modules together
 - EventEmitter2 injected with @Optional() so ContractsModule works before EventEmitterModule registered globally
+- EventEmitterModule.forRoot() registered globally in AppModule (03-03) — all Phase 3 modules now wired
+- BillingPolicy active lookup uses status=PolicyStatus.active enum (not isActive boolean field)
+- Obligation date arithmetic uses local-time Date constructors (new Date(year, month, day)) throughout service and tests
 - Amendment effectiveFrom validation uses UTC (getUTCDate()) to avoid timezone-dependent date boundary bugs
 - generateNextContractNumber queries version=1 only for unique CNT-xxx numbering per contract
 
@@ -102,6 +104,7 @@ Plan 2 of 4 complete (03-01 + 03-02 done; 03-03, 03-04 remaining)
 - 2026-03-05: 02-04 complete — Formula/Service/BillingPolicy CRUD, 41 new tests, 12 formulas + 8 services seeded, 124 total tests pass
 - 2026-03-05: 03-02 complete — ContractArea + ContractService junction modules, draft-only mutations, formula override validation, 24 tests pass
 - 2026-03-05: 03-01 complete — Contract CRUD, 8-state machine, amendment versioning, version history diffs, snapshot helper, 23 tests pass (171 total)
+- 2026-03-05: 03-03 complete — ObligationsModule with event-driven schedule generation, type/currency mappings, read-only endpoints, all Phase 3 modules + EventEmitter registered in AppModule, 21 tests pass (192 total)
 
 ## Performance Metrics
 
@@ -116,11 +119,12 @@ Plan 2 of 4 complete (03-01 + 03-02 done; 03-03, 03-04 remaining)
 | 02-04      | 11min    | 3     | 24    |
 | 03-02      | 3min     | 2     | 11    |
 | 03-01      | 5min     | 1     | 11    |
+| 03-03      | 4min     | 2     | 8     |
 
 ## Last Session
 
-- **Timestamp:** 2026-03-05T13:36:05Z
-- **Stopped at:** Completed 03-01-PLAN.md
+- **Timestamp:** 2026-03-05T13:44:13Z
+- **Stopped at:** Completed 03-03-PLAN.md
 
 ## Notes
 
