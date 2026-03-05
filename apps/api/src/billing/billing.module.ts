@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { BillingController } from './billing.controller';
+import { BillingSseController } from './sse/billing-sse.controller';
 import { BillingService } from './billing.service';
 import { BillingRunProcessor } from './billing-run.processor';
 
@@ -13,7 +14,7 @@ import { BillingRunProcessor } from './billing-run.processor';
     BullBoardModule.forFeature({ name: 'billing-run', adapter: BullMQAdapter }),
     BullBoardModule.forFeature({ name: 'invoice-generation', adapter: BullMQAdapter }),
   ],
-  controllers: [BillingController],
+  controllers: [BillingController, BillingSseController],
   providers: [BillingService, BillingRunProcessor],
   exports: [BillingService],
 })
