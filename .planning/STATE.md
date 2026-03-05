@@ -3,35 +3,35 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 04-03-PLAN.md (Formula Evaluation + Meter Reading)
-last_updated: "2026-03-05T17:56:15.764Z"
+stopped_at: Completed Phase 4 (Obligation Declaration) — all 4/4 plans done
+last_updated: "2026-03-05T19:30:00.000Z"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 16
-  completed_plans: 14
+  completed_plans: 16
 ---
 
 # Project State
 
 ## Current Phase
 
-Phase 4: Obligation Declaration
+Phase 4: Obligation Declaration — COMPLETE
 
 ## Phase Status
 
-in-progress
+complete
 
 ## Current Plan
 
-Plan 3 of 4 complete (04-01, 04-02, 04-03 done)
+All 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
 
 ## Completed Phases
 
 - Phase 1: Foundation & Infrastructure (4/4 plans)
 - Phase 2: Master Data & Formula Engine (4/4 plans)
 - Phase 3: Contract Domain (4/4 plans)
-- Phase 4: Obligation Declaration (3/4 plans done — 04-01, 04-02, 04-03 complete)
+- Phase 4: Obligation Declaration (4/4 plans — 04-01, 04-02, 04-03, 04-04 complete)
 
 ## Session Log
 
@@ -46,7 +46,7 @@ Plan 3 of 4 complete (04-01, 04-02, 04-03 done)
 [==========] Phase 1: 4/4 plans complete
 [==========] Phase 2: 4/4 plans complete (02-01, 02-02, 02-03, 02-04 done)
 [==========] Phase 3: 4/4 plans complete (03-01 + 03-02 + 03-03 + 03-04 done)
-[========----] Phase 4: 3/4 plans complete (04-01, 04-02, 04-03 done — 04-04 remaining)
+[==========] Phase 4: 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
 
 ## Key Decisions
 
@@ -118,6 +118,7 @@ Plan 3 of 4 complete (04-01, 04-02, 04-03 done)
 - 2026-03-05: 04-01 complete — 9-state obligation machine, SHA256 lineHash dedup, proration helper, PATCH /obligations/:id/transition, 39 tests pass
 - 2026-03-05: 04-02 complete — DeclarationsModule with 5-state machine, CSV/Excel bulk upload, 6 validation rules, attachment upload, declaration.submitted event, 26 new tests pass (249 total)
 - 2026-03-05: 04-03 complete — Formula evaluation engine (calculateObligation), proration, meter reading submission, bulk CSV upload, ObligationCalculatedEvent, declaration.submitted listener, 21 new tests added
+- 2026-03-05: 04-04 complete — SettlementModule with MAG monthly settlement, year-end true-up, obligation.calculated event wiring, seed data with demo declarations + meter readings, 10 new tests (281 total), Phase 4 fully done
 
 ## Performance Metrics
 
@@ -137,6 +138,7 @@ Plan 3 of 4 complete (04-01, 04-02, 04-03 done)
 | 04-01      | 5min     | 2     | 5     |
 | 04-02      | 5min     | 2     | 15    |
 | 04-03      | 10min    | 2     | 10    |
+| 04-04      | 8min     | 2     | 8     |
 
 ## Key Decisions (04-03 additions)
 
@@ -145,6 +147,14 @@ Plan 3 of 4 complete (04-01, 04-02, 04-03 done)
 - area_m2 uses Prisma areaM2 (Decimal) with test fallback to area.size mock for compatibility
 - NEGATIVE_CONSUMPTION is hard rejection in meter reading (unlike DEVIATION_THRESHOLD warning in revenue upload)
 - ObligationsListener injects PrismaService directly to query matching obligations without polluting ObligationsService public API
+
+## Key Decisions (04-04 additions)
+
+- MAG triggered by obligation.calculated event (not declaration.submitted) — avoids race condition
+- Upsert via lineHash for monthly shortfall — handles re-submitted declarations gracefully
+- Year-end true-up nets monthly shortfalls: (annualMag - annualRevShare) - totalMonthlyShortfalls
+- SettlementEntry created for every calculation (both shortfall and surplus) for audit trail
+- serviceDefinitionId cast as `null as unknown as string` — Prisma types not regenerated (Docker unavailable)
 
 ## Key Decisions (04-01 additions)
 
@@ -155,8 +165,8 @@ Plan 3 of 4 complete (04-01, 04-02, 04-03 done)
 
 ## Last Session
 
-- **Timestamp:** 2026-03-05T18:10:00Z
-- **Stopped at:** Completed 04-03-PLAN.md (Formula Evaluation + Meter Reading)
+- **Timestamp:** 2026-03-05T19:30:00Z
+- **Stopped at:** Completed Phase 4 (all 4/4 plans done) — ready for Phase 5 (Billing)
 
 ## Notes
 
