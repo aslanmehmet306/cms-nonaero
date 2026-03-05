@@ -33,6 +33,7 @@ import { BillingModule } from './billing/billing.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ExchangeRatesModule } from './exchange-rates/exchange-rates.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -95,6 +96,8 @@ import { ExchangeRatesModule } from './exchange-rates/exchange-rates.module';
     NotificationsModule,
     // Phase 6: Multi-Currency & Reporting
     ExchangeRatesModule,
+    // Phase 6: Reporting
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
