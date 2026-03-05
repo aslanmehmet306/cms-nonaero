@@ -4,18 +4,23 @@ import { ObligationsService, calculateProration } from './obligations.service';
 import { PrismaService } from '../database/prisma.service';
 import {
   ChargeType,
+  DeclarationType,
   ObligationStatus,
   ObligationType,
   PolicyStatus,
   ServiceType,
 } from '@shared-types/enums';
 import Decimal from 'decimal.js';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('ObligationsService', () => {
   let service: ObligationsService;
+  let eventEmitter: { emit: jest.Mock };
   let prisma: {
     contract: { findUnique: jest.Mock };
     billingPolicy: { findFirst: jest.Mock };
+    declaration: { findFirst: jest.Mock; findMany: jest.Mock };
+    declarationLine: { findMany: jest.Mock };
     obligation: { createMany: jest.Mock; findMany: jest.Mock; count: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
   };
 
@@ -83,9 +88,12 @@ describe('ObligationsService', () => {
   };
 
   beforeEach(async () => {
+    eventEmitter = { emit: jest.fn() };
     prisma = {
       contract: { findUnique: jest.fn() },
       billingPolicy: { findFirst: jest.fn() },
+      declaration: { findFirst: jest.fn(), findMany: jest.fn() },
+      declarationLine: { findMany: jest.fn() },
       obligation: {
         createMany: jest.fn(),
         findMany: jest.fn(),
@@ -99,6 +107,7 @@ describe('ObligationsService', () => {
       providers: [
         ObligationsService,
         { provide: PrismaService, useValue: prisma },
+        { provide: EventEmitter2, useValue: eventEmitter },
       ],
     }).compile();
 
@@ -647,6 +656,235 @@ describe('ObligationsService', () => {
       await expect(
         service.transitionObligation('non-existent', ObligationStatus.pending_input),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── calculateObligation ───────────────────────────────────────────────────
+
+  describe('calculateObligation', () => {
+    // Shared helpers for obligation calculation tests
+    const makeFormula = (expression = 'area_m2 * rate_per_m2', overrides: Record<string, unknown> = {}) => ({
+      id: 'formula-1',
+      expression,
+      version: 3,
+      variables: JSON.stringify([
+        { name: 'area_m2', type: 'number', defaultValue: 0 },
+        { name: 'rate_per_m2', type: 'number', defaultValue: 150 },
+      ]),
+      ...overrides,
+    });
+
+    const makeContractWithFormula = (overrides: Record<string, unknown> = {}) => ({
+      id: 'contract-uuid-1',
+      airportId: 'airport-uuid-1',
+      tenantId: 'tenant-uuid-1',
+      effectiveFrom: new Date('2024-01-01'), // Jan 1 = no proration by default
+      contractAreas: [
+        { area: { size: 200 } }, // 200 m2
+      ],
+      contractServices: [
+        {
+          id: 'cs-1',
+          serviceDefinitionId: 'sd-rent',
+          overrideFormulaId: null,
+          overrideFormula: null,
+          customParameters: null,
+          serviceDefinition: {
+            id: 'sd-rent',
+            formula: makeFormula(), // area_m2 * rate_per_m2 with defaults area_m2=0, rate_per_m2=150
+          },
+        },
+      ],
+      ...overrides,
+    });
+
+    const makeObligationForCalc = (overrides: Record<string, unknown> = {}) => ({
+      id: 'obl-calc-1',
+      contractId: 'contract-uuid-1',
+      tenantId: 'tenant-uuid-1',
+      airportId: 'airport-uuid-1',
+      serviceDefinitionId: 'sd-rent',
+      chargeType: ChargeType.base_rent,
+      obligationType: ObligationType.rent,
+      periodStart: new Date('2024-01-01'),
+      periodEnd: new Date('2024-01-31'),
+      dueDate: new Date('2024-03-01'),
+      status: ObligationStatus.pending_calculation,
+      amount: null,
+      currency: 'TRY',
+      contractVersion: 1,
+      lineHash: 'abc123',
+      calculationTrace: null,
+      formulaVersion: null,
+      sourceDeclarationId: null,
+      skippedAt: null,
+      skippedReason: null,
+      ...overrides,
+    });
+
+    beforeEach(() => {
+      // Default: obligation found in pending_calculation
+      prisma.obligation.findUnique.mockResolvedValue(makeObligationForCalc());
+      // Default: contract with formula + area
+      prisma.contract.findUnique.mockResolvedValue(makeContractWithFormula());
+      // Default: no declaration lines
+      prisma.declaration.findFirst.mockResolvedValue(null);
+      prisma.declarationLine.findMany.mockResolvedValue([]);
+      // Update returns updated obligation
+      prisma.obligation.update.mockImplementation(({ data }: any) =>
+        Promise.resolve({ ...makeObligationForCalc(), ...data }),
+      );
+    });
+
+    it('evaluates formula and stores amount + calculationTrace on the obligation', async () => {
+      // area_m2=200, rate_per_m2=150 => 200*150=30000
+      await service.calculateObligation('obl-calc-1');
+
+      expect(prisma.obligation.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'obl-calc-1' },
+          data: expect.objectContaining({
+            amount: expect.anything(),
+            calculationTrace: expect.any(Object),
+          }),
+        }),
+      );
+    });
+
+    it('transitions to ready for positive calculated amount', async () => {
+      await service.calculateObligation('obl-calc-1');
+
+      expect(prisma.obligation.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: ObligationStatus.ready }),
+        }),
+      );
+    });
+
+    it('transitions to skipped with skippedReason="zero_amount" when formula evaluates to 0', async () => {
+      prisma.obligation.findUnique.mockResolvedValue(makeObligationForCalc());
+      prisma.contract.findUnique.mockResolvedValue(makeContractWithFormula({
+        contractAreas: [{ area: { size: 0 } }], // 0 * 150 = 0
+      }));
+
+      await service.calculateObligation('obl-calc-1');
+
+      expect(prisma.obligation.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: ObligationStatus.skipped,
+            skippedReason: 'zero_amount',
+          }),
+        }),
+      );
+    });
+
+    it('stores formulaVersion from formula.version', async () => {
+      await service.calculateObligation('obl-calc-1');
+
+      expect(prisma.obligation.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ formulaVersion: 3 }),
+        }),
+      );
+    });
+
+    it('uses overrideFormula when contractService has overrideFormulaId', async () => {
+      const overrideFormula = makeFormula('area_m2 * 200', { id: 'override-formula-1', version: 7 });
+      prisma.contract.findUnique.mockResolvedValue(makeContractWithFormula({
+        contractServices: [
+          {
+            id: 'cs-1',
+            serviceDefinitionId: 'sd-rent',
+            overrideFormulaId: 'override-formula-1',
+            overrideFormula,
+            customParameters: null,
+            serviceDefinition: {
+              id: 'sd-rent',
+              formula: makeFormula(), // base formula — should NOT be used
+            },
+          },
+        ],
+      }));
+
+      await service.calculateObligation('obl-calc-1');
+
+      // overrideFormula.version=7
+      expect(prisma.obligation.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ formulaVersion: 7 }),
+        }),
+      );
+    });
+
+    it('falls back to serviceDefinition formula when no overrideFormulaId', async () => {
+      // Default setup uses serviceDefinition formula with version 3
+      await service.calculateObligation('obl-calc-1');
+
+      expect(prisma.obligation.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ formulaVersion: 3 }),
+        }),
+      );
+    });
+
+    it('sets sourceDeclarationId when declarationId is provided', async () => {
+      await service.calculateObligation('obl-calc-1', 'decl-uuid-1');
+
+      expect(prisma.obligation.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ sourceDeclarationId: 'decl-uuid-1' }),
+        }),
+      );
+    });
+
+    it('applies proration for mid-month contract start (base_rent charge type)', async () => {
+      // Contract starts Jan 15 => proration = 17/31
+      prisma.obligation.findUnique.mockResolvedValue(makeObligationForCalc({
+        chargeType: ChargeType.base_rent,
+        periodStart: new Date('2024-01-01'),
+        periodEnd: new Date('2024-01-31'),
+      }));
+      prisma.contract.findUnique.mockResolvedValue(makeContractWithFormula({
+        effectiveFrom: new Date('2024-01-15'), // mid-month start
+      }));
+
+      await service.calculateObligation('obl-calc-1');
+
+      const updateCall = prisma.obligation.update.mock.calls[0][0];
+      const amount = new Decimal(String(updateCall.data.amount));
+      // 200 * 150 = 30000, prorated by 17/31 ≈ 16451.61
+      expect(amount.lessThan(new Decimal('30000'))).toBe(true);
+      expect(amount.greaterThan(new Decimal('0'))).toBe(true);
+    });
+
+    it('throws BadRequestException when formula evaluation fails (bad expression)', async () => {
+      prisma.contract.findUnique.mockResolvedValue(makeContractWithFormula({
+        contractServices: [
+          {
+            id: 'cs-1',
+            serviceDefinitionId: 'sd-rent',
+            overrideFormulaId: null,
+            overrideFormula: null,
+            customParameters: null,
+            serviceDefinition: {
+              id: 'sd-rent',
+              formula: makeFormula('area_m2 / 0 / undefined_nonsense ###'),
+            },
+          },
+        ],
+      }));
+
+      await expect(service.calculateObligation('obl-calc-1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('emits obligation.calculated event after successful formula evaluation', async () => {
+      await service.calculateObligation('obl-calc-1');
+
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        'obligation.calculated',
+        expect.objectContaining({ obligationId: 'obl-calc-1' }),
+      );
     });
   });
 

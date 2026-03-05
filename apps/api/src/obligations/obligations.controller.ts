@@ -5,6 +5,7 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Post,
   Query,
 } from '@nestjs/common';
 import {
@@ -19,6 +20,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { ObligationsService } from './obligations.service';
 import { QueryObligationsDto } from './dto/query-obligations.dto';
 import { TransitionObligationDto } from './dto/transition-obligation.dto';
+import { CalculateObligationDto } from './dto/calculate-obligation.dto';
 
 /**
  * ObligationsController — obligation read and state-transition endpoints.
@@ -100,5 +102,26 @@ export class ObligationsController {
   async getTrace(@Param('id', ParseUUIDPipe) id: string) {
     const obligation = await this.obligationsService.findOne(id);
     return obligation.calculationTrace ?? null;
+  }
+
+  @Post(':id/calculate')
+  @Roles(
+    UserRole.commercial_manager,
+    UserRole.finance,
+    UserRole.airport_admin,
+    UserRole.super_admin,
+  )
+  @Audit('Obligation')
+  @ApiOperation({ summary: 'Manually trigger formula evaluation for an obligation' })
+  @ApiResponse({ status: 201, description: 'Obligation calculated and status updated to ready or skipped' })
+  @ApiResponse({ status: 400, description: 'Formula evaluation failed or obligation not found' })
+  @ApiResponse({ status: 403, description: 'Insufficient role' })
+  @ApiResponse({ status: 404, description: 'Obligation not found' })
+  async calculate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CalculateObligationDto,
+  ) {
+    await this.obligationsService.calculateObligation(id, dto.declarationId);
+    return this.obligationsService.findOne(id);
   }
 }
