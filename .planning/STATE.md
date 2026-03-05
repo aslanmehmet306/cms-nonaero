@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-03-06T00:55:40Z"
+stopped_at: Completed 06-03-PLAN.md — Phase 6 complete
+last_updated: "2026-03-05T22:07:02Z"
 progress:
   total_phases: 7
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 23
-  completed_plans: 21
+  completed_plans: 23
 ---
 
 # Project State
@@ -20,11 +20,11 @@ Phase 6: Multi-Currency & Reporting
 
 ## Phase Status
 
-in-progress
+complete
 
 ## Current Plan
 
-Plan 1 of 3 (06-01 done)
+Plan 3 of 3 (06-01, 06-02, 06-03 done — Phase 6 complete)
 
 ## Completed Phases
 
@@ -33,6 +33,7 @@ Plan 1 of 3 (06-01 done)
 - Phase 3: Contract Domain (4/4 plans)
 - Phase 4: Obligation Declaration (4/4 plans — 04-01, 04-02, 04-03, 04-04 complete)
 - Phase 5: Billing & Invoice (4/4 plans — 05-01, 05-02, 05-03, 05-04 complete)
+- Phase 6: Multi-Currency & Reporting (3/3 plans — 06-01, 06-02, 06-03 complete)
 
 ## Session Log
 
@@ -49,7 +50,7 @@ Plan 1 of 3 (06-01 done)
 [==========] Phase 3: 4/4 plans complete (03-01 + 03-02 + 03-03 + 03-04 done)
 [==========] Phase 4: 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
 [==========] Phase 5: 4/4 plans complete (05-01, 05-02, 05-03, 05-04 done)
-[===-------] Phase 6: 1/3 plans complete (06-01 done)
+[==========] Phase 6: 3/3 plans complete (06-01, 06-02, 06-03 done)
 
 ## Key Decisions
 
@@ -137,6 +138,8 @@ Plan 1 of 3 (06-01 done)
 - 2026-03-06: 05-03 complete — InvoicesModule with Stripe provider, webhook handler, event deduplication, 22 new tests (327 total)
 - 2026-03-06: 05-04 complete — NotificationsModule with 7 Turkish email templates, SSE push, event listeners, 12 new tests (339 total), Phase 5 fully done
 - 2026-03-06: 06-01 complete — ExchangeRate model + service with Decimal(19,8) FX precision, effective-date rate lookup, 6-endpoint REST controller, 8 new tests (357 total)
+- 2026-03-06: 06-02 complete — Entity timeline drill-down with field-level diffs, Obligation calculationTrace enrichment, 10 new tests
+- 2026-03-06: 06-03 complete — ReportsModule with 5 endpoints (dashboard, revenue-summary, aging, obligations, billing-history), FX conversion, 14 new tests (371 total), Phase 6 fully done
 
 ## Performance Metrics
 
@@ -162,6 +165,8 @@ Plan 1 of 3 (06-01 done)
 | 05-03      | 7min     | 2     | 15    |
 | 05-04      | 5min     | 2     | 17    |
 | 06-01      | 5min     | 2     | 9     |
+| 06-02      | 3min     | 2     | 4     |
+| 06-03      | 5min     | 2     | 10    |
 
 ## Key Decisions (04-03 additions)
 
@@ -220,10 +225,18 @@ Plan 1 of 3 (06-01 done)
 - GET /exchange-rates/lookup placed before GET /exchange-rates/:id to avoid UUID parse collision
 - Identity rate shortcut for same-currency pairs (no DB round-trip, returns 1.0)
 
+## Key Decisions (06-03 additions)
+
+- ObligationStatus enum from @prisma/client (not string literals) for type-safe Prisma groupBy status filter
+- Collection rate sums across currencies for rough KPI percentage (not per-currency collection rates)
+- Revenue summary FX conversion catches NotFoundException and returns warning field instead of failing response
+- Aging report uses application-level asOfDate parameter (not CURRENT_DATE) per pitfall #5 for timezone safety
+- Null-safe Decimal via `new Decimal(result._sum.amount?.toString() ?? '0')` prevents NaN on empty periods
+
 ## Last Session
 
-- **Timestamp:** 2026-03-06T00:55:40Z
-- **Stopped at:** Completed 06-01-PLAN.md
+- **Timestamp:** 2026-03-05T22:07:02Z
+- **Stopped at:** Completed 06-03-PLAN.md — Phase 6 complete (3/3 plans)
 
 ## Notes
 

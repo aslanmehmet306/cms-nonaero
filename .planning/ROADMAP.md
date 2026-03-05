@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Contract Domain** - Contract lifecycle, versioning, service assignment, obligation trigger (completed 2026-03-05)
 - [x] **Phase 4: Obligation & Declaration** - Obligation scheduling, revenue/utility inputs, MAG settlement (completed 2026-03-05)
 - [ ] **Phase 5: Billing & Invoice** - BullMQ orchestration, Stripe integration, webhooks, notifications
-- [ ] **Phase 6: Multi-Currency & Reporting** - Exchange rates, reporting dashboard, audit trail UI
+- [x] **Phase 6: Multi-Currency & Reporting** - Exchange rates, reporting dashboard, audit trail UI
 - [ ] **Phase 7: Admin Portal** - React frontend for contract management, billing operations, invoice tracking
 
 ## Phase Details
@@ -197,8 +197,8 @@ Plans:
 Plans:
 
 - [x] 06-01-PLAN.md — ExchangeRate Prisma model + CRUD endpoints + rate lookup service + currency conversion helper
-- [ ] 06-02-PLAN.md — Enhanced audit trail with entity timeline drill-down, field-level diffs, obligation trace + contract summary enrichment
-- [ ] 06-03-PLAN.md — ReportsModule with dashboard KPIs, revenue summary (by tenant + service type), aging report (30/60/90), currency conversion display
+- [x] 06-02-PLAN.md — Enhanced audit trail with entity timeline drill-down, field-level diffs, obligation trace + contract summary enrichment
+- [x] 06-03-PLAN.md — ReportsModule with dashboard KPIs, revenue summary (by tenant + service type), aging report (30/60/90), currency conversion display
 
 ### Phase 7: Admin Portal
 
