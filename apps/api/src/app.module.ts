@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ClsModule } from 'nestjs-cls';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
+import { BullModule } from '@nestjs/bullmq';
+import { BullBoardModule } from '@bull-board/nestjs';
+import { ExpressAdapter } from '@bull-board/express';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { validate } from './config/env.validation';
@@ -26,6 +29,7 @@ import { ObligationsModule } from './obligations/obligations.module';
 import { ContractSchedulerModule } from './scheduler/contract-scheduler.module';
 import { DeclarationsModule } from './declarations/declarations.module';
 import { SettlementModule } from './settlement/settlement.module';
+import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -43,6 +47,22 @@ import { SettlementModule } from './settlement/settlement.module';
     EventEmitterModule.forRoot(),
     // ScheduleModule enables @Cron decorators for daily contract lifecycle transitions
     ScheduleModule.forRoot(),
+    // BullMQ: creates its own Redis connections (separate from REDIS_CLIENT ioredis instance)
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          host: config.get('REDIS_HOST', 'localhost'),
+          port: config.get('REDIS_PORT', 6379),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+    // Bull Board dashboard at /admin/queues
+    BullBoardModule.forRoot({
+      route: '/admin/queues',
+      adapter: ExpressAdapter,
+    }),
     DatabaseModule,
     RedisModule,
     AuthModule,
@@ -65,6 +85,8 @@ import { SettlementModule } from './settlement/settlement.module';
     // Phase 4: Obligation & Declaration
     DeclarationsModule,
     SettlementModule,
+    // Phase 5: Billing & Invoice
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
