@@ -31,6 +31,7 @@ import { DeclarationsModule } from './declarations/declarations.module';
 import { SettlementModule } from './settlement/settlement.module';
 import { BillingModule } from './billing/billing.module';
 import { InvoicesModule } from './invoices/invoices.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -89,6 +90,8 @@ import { InvoicesModule } from './invoices/invoices.module';
     // Phase 5: Billing & Invoice
     BillingModule,
     InvoicesModule,
+    // Phase 5: Notifications
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

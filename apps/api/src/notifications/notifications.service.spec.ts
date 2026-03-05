@@ -400,19 +400,16 @@ describe('EmailService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    // We need to mock @nestjs-modules/mailer's MailerService
-    const { MailerService } = jest.requireActual('@nestjs-modules/mailer');
+    // Provide MailerService via its class token from @nestjs-modules/mailer
+    const { MailerService } = await import('@nestjs-modules/mailer');
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EmailService,
-        { provide: 'MAILER_SERVICE', useValue: mockMailer },
+        { provide: MailerService, useValue: mockMailer },
       ],
     }).compile();
 
-    // Manually set the mailer on the service since we bypass DI injection name
     emailService = module.get<EmailService>(EmailService);
-    // Access private field to set mock
-    (emailService as any).mailer = mockMailer;
   });
 
   it('should render handlebars template and call sendMail', async () => {
