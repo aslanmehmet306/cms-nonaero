@@ -3,7 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TenantsService } from './tenants.service';
 import { PrismaService } from '../database/prisma.service';
-import { TenantStatus } from '@shared-types/enums';
+import { TenantStatus, ContractStatus } from '@shared-types/enums';
 
 // Mock Stripe module
 jest.mock('stripe', () => {
@@ -25,6 +25,10 @@ describe('TenantsService', () => {
       update: jest.Mock;
       count: jest.Mock;
     };
+    contract: {
+      updateMany: jest.Mock;
+    };
+    $transaction: jest.Mock;
   };
   let configService: { get: jest.Mock };
 
@@ -53,6 +57,10 @@ describe('TenantsService', () => {
         update: jest.fn(),
         count: jest.fn(),
       },
+      contract: {
+        updateMany: jest.fn(),
+      },
+      $transaction: jest.fn(),
     };
 
     configService = {
@@ -269,12 +277,18 @@ describe('TenantsService', () => {
   });
 
   describe('updateStatus', () => {
+    beforeEach(() => {
+      // updateStatus now uses $transaction — delegate to callback so existing tests work
+      prisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma));
+    });
+
     it('should allow transition from active to suspended', async () => {
       prisma.tenant.findUnique.mockResolvedValue(mockTenant);
       prisma.tenant.update.mockResolvedValue({
         ...mockTenant,
         status: TenantStatus.suspended,
       });
+      prisma.contract.updateMany.mockResolvedValue({ count: 0 });
 
       const result = await service.updateStatus('tenant-uuid-1', TenantStatus.suspended);
 
@@ -292,6 +306,7 @@ describe('TenantsService', () => {
         ...mockTenant,
         status: TenantStatus.deactivated,
       });
+      // deactivated: no contract cascade expected
 
       const result = await service.updateStatus('tenant-uuid-1', TenantStatus.deactivated);
 
@@ -307,6 +322,7 @@ describe('TenantsService', () => {
         ...mockTenant,
         status: TenantStatus.active,
       });
+      prisma.contract.updateMany.mockResolvedValue({ count: 0 });
 
       const result = await service.updateStatus('tenant-uuid-1', TenantStatus.active);
 
@@ -322,6 +338,7 @@ describe('TenantsService', () => {
         ...mockTenant,
         status: TenantStatus.active,
       });
+      prisma.contract.updateMany.mockResolvedValue({ count: 0 });
 
       const result = await service.updateStatus('tenant-uuid-1', TenantStatus.active);
 
@@ -334,6 +351,61 @@ describe('TenantsService', () => {
       await expect(
         service.updateStatus('non-existent-id', TenantStatus.suspended),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('updateStatus - contract cascade', () => {
+    it('should cascade to active contracts when suspending tenant', async () => {
+      prisma.tenant.findUnique.mockResolvedValue(mockTenant);
+      // $transaction executes the callback
+      prisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma));
+      prisma.tenant.update.mockResolvedValue({ ...mockTenant, status: TenantStatus.suspended });
+      prisma.contract.updateMany.mockResolvedValue({ count: 2 });
+
+      const result = await service.updateStatus('tenant-uuid-1', TenantStatus.suspended);
+
+      expect(prisma.contract.updateMany).toHaveBeenCalledWith({
+        where: { tenantId: 'tenant-uuid-1', status: ContractStatus.active },
+        data: { status: ContractStatus.suspended },
+      });
+      expect(result.status).toBe(TenantStatus.suspended);
+    });
+
+    it('should cascade to suspended contracts when reactivating tenant', async () => {
+      prisma.tenant.findUnique.mockResolvedValue({ ...mockTenant, status: TenantStatus.suspended });
+      prisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma));
+      prisma.tenant.update.mockResolvedValue({ ...mockTenant, status: TenantStatus.active });
+      prisma.contract.updateMany.mockResolvedValue({ count: 2 });
+
+      const result = await service.updateStatus('tenant-uuid-1', TenantStatus.active);
+
+      expect(prisma.contract.updateMany).toHaveBeenCalledWith({
+        where: { tenantId: 'tenant-uuid-1', status: ContractStatus.suspended },
+        data: { status: ContractStatus.active },
+      });
+      expect(result.status).toBe(TenantStatus.active);
+    });
+
+    it('should NOT cascade to contracts when deactivating tenant', async () => {
+      prisma.tenant.findUnique.mockResolvedValue(mockTenant);
+      prisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma));
+      prisma.tenant.update.mockResolvedValue({ ...mockTenant, status: TenantStatus.deactivated });
+
+      await service.updateStatus('tenant-uuid-1', TenantStatus.deactivated);
+
+      expect(prisma.contract.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should use updateMany for efficient batch contract cascade (not N+1)', async () => {
+      prisma.tenant.findUnique.mockResolvedValue(mockTenant);
+      prisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma));
+      prisma.tenant.update.mockResolvedValue({ ...mockTenant, status: TenantStatus.suspended });
+      prisma.contract.updateMany.mockResolvedValue({ count: 5 });
+
+      await service.updateStatus('tenant-uuid-1', TenantStatus.suspended);
+
+      // updateMany called exactly once — no N+1 loop
+      expect(prisma.contract.updateMany).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../database/prisma.service';
-import { TenantStatus } from '@shared-types/enums';
+import { TenantStatus, ContractStatus } from '@shared-types/enums';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 
@@ -174,16 +174,37 @@ export class TenantsService {
    * Update tenant status. All transitions are fully reversible:
    * active <-> suspended <-> deactivated (any direction).
    *
-   * TODO (Phase 3+): Cascade status to contracts/obligations.
-   * Suspending a tenant should suspend all active contracts and put pending obligations on_hold.
-   * Reactivating should reverse the cascade.
+   * Cascades to contracts:
+   * - suspended: all active contracts -> suspended (batch via updateMany)
+   * - active (reactivation): all suspended contracts -> active (reverse cascade)
+   * - deactivated: no cascade — contracts retain their current status
    */
   async updateStatus(id: string, status: TenantStatus) {
     await this.findOne(id);
 
-    const updated = await this.prisma.tenant.update({
-      where: { id },
-      data: { status },
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.tenant.update({
+        where: { id },
+        data: { status },
+      });
+
+      // Cascade to contracts efficiently via updateMany (no N+1)
+      if (status === TenantStatus.suspended) {
+        // Suspend all active contracts for this tenant
+        await tx.contract.updateMany({
+          where: { tenantId: id, status: ContractStatus.active },
+          data: { status: ContractStatus.suspended },
+        });
+      } else if (status === TenantStatus.active) {
+        // Reactivate suspended contracts (reverse cascade)
+        await tx.contract.updateMany({
+          where: { tenantId: id, status: ContractStatus.suspended },
+          data: { status: ContractStatus.active },
+        });
+      }
+      // deactivated: no cascade per business rules
+
+      return result;
     });
 
     this.logger.log(

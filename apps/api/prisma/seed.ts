@@ -692,6 +692,197 @@ async function main() {
 
   console.log(`Service definitions: ${serviceDefs.length} seeded`);
 
+  // 8. Contract seed data — 3 sample contracts with area and service assignments
+  // ---------------------------------------------------------------------------
+
+  // Look up area IDs needed for contract assignments
+  const dutyfreeMainArea = await prisma.area.findFirst({
+    where: { airportId: airport.id, code: 'DOM-G-R-001' },
+  });
+  const intFoodHallArea = await prisma.area.findFirst({
+    where: { airportId: airport.id, code: 'INT-G-F-001' },
+  });
+  const cipExecutiveDiningArea = await prisma.area.findFirst({
+    where: { airportId: airport.id, code: 'CIP-1F-F-001' },
+  });
+  const groundFloorCafeArea = await prisma.area.findFirst({
+    where: { airportId: airport.id, code: 'DOM-G-F-001' },
+  });
+
+  // Look up service definition IDs needed for contract assignments
+  const svcRentFixed = await prisma.serviceDefinition.findFirst({
+    where: { airportId: airport.id, code: 'SVC-RENT-FIXED' },
+  });
+  const svcRevShare = await prisma.serviceDefinition.findFirst({
+    where: { airportId: airport.id, code: 'SVC-REVSHARE-FLAT' },
+  });
+  const svcCam = await prisma.serviceDefinition.findFirst({
+    where: { airportId: airport.id, code: 'SVC-CAM' },
+  });
+  const svcElec = await prisma.serviceDefinition.findFirst({
+    where: { airportId: airport.id, code: 'SVC-ELEC' },
+  });
+
+  // CNT-001: Duty Free Main (TNT-001), active contract with 2 areas and 3 services
+  const existingCnt001 = await prisma.contract.findFirst({
+    where: { airportId: airport.id, contractNumber: 'CNT-001', version: 1 },
+  });
+
+  if (!existingCnt001) {
+    const cnt001 = await prisma.contract.create({
+      data: {
+        airportId: airport.id,
+        tenantId: createdTenants['TNT-001'],
+        contractNumber: 'CNT-001',
+        version: 1,
+        status: 'active',
+        effectiveFrom: new Date('2026-01-01'),
+        effectiveTo: new Date('2026-12-31'),
+        annualMag: 500000,
+        magCurrency: 'TRY',
+        billingFrequency: 'monthly',
+        signedAt: new Date('2025-12-15'),
+        publishedAt: new Date('2025-12-10'),
+      },
+    });
+
+    // 2 areas: Duty Free Main + International Food Hall
+    if (dutyfreeMainArea) {
+      await prisma.contractArea.create({
+        data: {
+          contractId: cnt001.id,
+          areaId: dutyfreeMainArea.id,
+          effectiveFrom: new Date('2026-01-01'),
+          effectiveTo: new Date('2026-12-31'),
+        },
+      });
+    }
+    if (intFoodHallArea) {
+      await prisma.contractArea.create({
+        data: {
+          contractId: cnt001.id,
+          areaId: intFoodHallArea.id,
+          effectiveFrom: new Date('2026-01-01'),
+          effectiveTo: new Date('2026-12-31'),
+        },
+      });
+    }
+
+    // 3 services: rent, revenue_share, service_charge
+    if (svcRentFixed) {
+      await prisma.contractService.create({
+        data: { contractId: cnt001.id, serviceDefinitionId: svcRentFixed.id },
+      });
+    }
+    if (svcRevShare) {
+      await prisma.contractService.create({
+        data: { contractId: cnt001.id, serviceDefinitionId: svcRevShare.id },
+      });
+    }
+    if (svcCam) {
+      await prisma.contractService.create({
+        data: { contractId: cnt001.id, serviceDefinitionId: svcCam.id },
+      });
+    }
+    console.log('CNT-001: Duty Free Main contract created (active, 2 areas, 3 services)');
+  } else {
+    console.log('CNT-001: already exists, skipping');
+  }
+
+  // CNT-002: CIP Lounge (TNT-002), draft contract with 1 area and 2 services
+  const existingCnt002 = await prisma.contract.findFirst({
+    where: { airportId: airport.id, contractNumber: 'CNT-002', version: 1 },
+  });
+
+  if (!existingCnt002) {
+    const cnt002 = await prisma.contract.create({
+      data: {
+        airportId: airport.id,
+        tenantId: createdTenants['TNT-002'],
+        contractNumber: 'CNT-002',
+        version: 1,
+        status: 'draft',
+        effectiveFrom: new Date('2026-03-01'),
+        effectiveTo: new Date('2027-02-28'),
+        annualMag: 200000,
+        magCurrency: 'TRY',
+        billingFrequency: 'monthly',
+      },
+    });
+
+    // 1 area: CIP Executive Dining
+    if (cipExecutiveDiningArea) {
+      await prisma.contractArea.create({
+        data: {
+          contractId: cnt002.id,
+          areaId: cipExecutiveDiningArea.id,
+          effectiveFrom: new Date('2026-03-01'),
+          effectiveTo: new Date('2027-02-28'),
+        },
+      });
+    }
+
+    // 2 services: rent, utility
+    if (svcRentFixed) {
+      await prisma.contractService.create({
+        data: { contractId: cnt002.id, serviceDefinitionId: svcRentFixed.id },
+      });
+    }
+    if (svcElec) {
+      await prisma.contractService.create({
+        data: { contractId: cnt002.id, serviceDefinitionId: svcElec.id },
+      });
+    }
+    console.log('CNT-002: CIP Lounge contract created (draft, 1 area, 2 services)');
+  } else {
+    console.log('CNT-002: already exists, skipping');
+  }
+
+  // CNT-003: Ground Floor Retail (TNT-003), published contract with 1 area and 1 service (no MAG)
+  const existingCnt003 = await prisma.contract.findFirst({
+    where: { airportId: airport.id, contractNumber: 'CNT-003', version: 1 },
+  });
+
+  if (!existingCnt003) {
+    const cnt003 = await prisma.contract.create({
+      data: {
+        airportId: airport.id,
+        tenantId: createdTenants['TNT-003'],
+        contractNumber: 'CNT-003',
+        version: 1,
+        status: 'published',
+        effectiveFrom: new Date('2026-06-01'),
+        effectiveTo: new Date('2027-05-31'),
+        annualMag: null, // no MAG
+        billingFrequency: 'monthly',
+        signedAt: new Date('2026-02-20'),
+        publishedAt: new Date('2026-02-15'),
+      },
+    });
+
+    // 1 area: Ground Floor Cafe
+    if (groundFloorCafeArea) {
+      await prisma.contractArea.create({
+        data: {
+          contractId: cnt003.id,
+          areaId: groundFloorCafeArea.id,
+          effectiveFrom: new Date('2026-06-01'),
+          effectiveTo: new Date('2027-05-31'),
+        },
+      });
+    }
+
+    // 1 service: rent
+    if (svcRentFixed) {
+      await prisma.contractService.create({
+        data: { contractId: cnt003.id, serviceDefinitionId: svcRentFixed.id },
+      });
+    }
+    console.log('CNT-003: Ground Floor Retail contract created (published, 1 area, 1 service, no MAG)');
+  } else {
+    console.log('CNT-003: already exists, skipping');
+  }
+
   console.log('Seeding completed successfully!');
 }
 
