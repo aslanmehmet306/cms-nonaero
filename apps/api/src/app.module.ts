@@ -24,6 +24,7 @@ import { ContractAreasModule } from './contract-areas/contract-areas.module';
 import { ContractServicesModule } from './contract-services/contract-services.module';
 import { ObligationsModule } from './obligations/obligations.module';
 import { ContractSchedulerModule } from './scheduler/contract-scheduler.module';
+import { DeclarationsModule } from './declarations/declarations.module';
 
 @Module({
   imports: [
@@ -60,6 +61,8 @@ import { ContractSchedulerModule } from './scheduler/contract-scheduler.module';
     ObligationsModule,
     // Phase 3: Contract lifecycle scheduler
     ContractSchedulerModule,
+    // Phase 4: Obligation declaration
+    DeclarationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
