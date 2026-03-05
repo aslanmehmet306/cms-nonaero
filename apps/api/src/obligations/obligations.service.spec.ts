@@ -294,7 +294,8 @@ describe('ObligationsService', () => {
 
       const [obligation] = prisma.obligation.createMany.mock.calls[0][0].data;
       // Jan 2024 periodEnd = Jan 31, dueDate = Feb 15
-      const expectedDueDate = new Date('2024-01-31');
+      // Use local-time date construction to match service behavior
+      const expectedDueDate = new Date(2024, 0, 31); // Jan 31 local time
       expectedDueDate.setDate(expectedDueDate.getDate() + 15);
       expect(obligation.dueDate.getTime()).toBe(expectedDueDate.getTime());
     });
@@ -311,7 +312,8 @@ describe('ObligationsService', () => {
 
       const [obligation] = prisma.obligation.createMany.mock.calls[0][0].data;
       // Jan 31 + 30 days = Mar 1 (2024 is leap year, so Feb has 29 days)
-      const expectedDueDate = new Date('2024-01-31');
+      // Use local-time date construction to match service behavior
+      const expectedDueDate = new Date(2024, 0, 31); // Jan 31 local time
       expectedDueDate.setDate(expectedDueDate.getDate() + 30);
       expect(obligation.dueDate.getTime()).toBe(expectedDueDate.getTime());
     });
