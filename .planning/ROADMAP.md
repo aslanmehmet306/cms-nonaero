@@ -235,7 +235,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 1. Foundation & Infrastructure  | 4/4            | Complete    | 2026-03-01 |
 | 2. Master Data & Formula Engine | 4/4            | Complete    | 2026-03-05 |
 | 3. Contract Domain              | 4/4            | Complete    | 2026-03-05 |
-| 4. Obligation & Declaration     | 0/4            | Not started | -          |
+| 4. Obligation & Declaration     | 2/4 | In Progress|  |
 | 5. Billing & Invoice            | 0/TBD          | Not started | -          |
 | 6. Multi-Currency & Reporting   | 0/TBD          | Not started | -          |
 | 7. Admin Portal                 | 0/TBD          | Not started | -          |

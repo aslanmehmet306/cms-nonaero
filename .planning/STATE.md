@@ -3,34 +3,35 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Phase 04 context gathered
-last_updated: "2026-03-05T17:07:22.247Z"
+stopped_at: Completed 04-02-PLAN.md (DeclarationsModule)
+last_updated: "2026-03-05T17:56:15.764Z"
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 16
+  completed_plans: 14
 ---
 
 # Project State
 
 ## Current Phase
 
-Phase 3: Contract Domain
+Phase 4: Obligation Declaration
 
 ## Phase Status
 
-complete
+in-progress
 
 ## Current Plan
 
-Plan 4 of 4 complete (03-01 + 03-02 + 03-03 + 03-04 done)
+Plan 1 of 4 complete (04-01 done)
 
 ## Completed Phases
 
 - Phase 1: Foundation & Infrastructure (4/4 plans)
 - Phase 2: Master Data & Formula Engine (4/4 plans)
 - Phase 3: Contract Domain (4/4 plans)
+- Phase 4: Obligation Declaration (1/4 plans done — 04-01 complete)
 
 ## Session Log
 
@@ -45,6 +46,7 @@ Plan 4 of 4 complete (03-01 + 03-02 + 03-03 + 03-04 done)
 [==========] Phase 1: 4/4 plans complete
 [==========] Phase 2: 4/4 plans complete (02-01, 02-02, 02-03, 02-04 done)
 [==========] Phase 3: 4/4 plans complete (03-01 + 03-02 + 03-03 + 03-04 done)
+[==---------] Phase 4: 1/4 plans complete (04-01 done, 04-02 + 04-03 + 04-04 remaining)
 
 ## Key Decisions
 
@@ -89,6 +91,9 @@ Plan 4 of 4 complete (03-01 + 03-02 + 03-03 + 03-04 done)
 - Daily cron at 02:00 Istanbul time for contract lifecycle transitions (activation + amendment flip)
 - Tenant suspension cascades to active contracts via updateMany (not N+1); deactivated status has no cascade
 - Amendment flip uses $transaction array form for atomic old-active->amended + pending->active swap
+- DEVIATION_THRESHOLD is warning-only (not rejection) in CSV upload — row still created, error included in summary
+- frozenToken UUID guards all declaration mutation paths (update, delete, line CRUD)
+- Batch tenant validation in upload (findMany in:{ids}) vs N individual lookups
 
 ## Blockers
 
@@ -110,6 +115,7 @@ Plan 4 of 4 complete (03-01 + 03-02 + 03-03 + 03-04 done)
 - 2026-03-05: 03-01 complete — Contract CRUD, 8-state machine, amendment versioning, version history diffs, snapshot helper, 23 tests pass (171 total)
 - 2026-03-05: 03-03 complete — ObligationsModule with event-driven schedule generation, type/currency mappings, read-only endpoints, all Phase 3 modules + EventEmitter registered in AppModule, 21 tests pass (192 total)
 - 2026-03-05: 03-04 complete — ContractSchedulerService with daily cron, tenant suspension cascade via updateMany, 3 demo contracts seeded, 30 new tests pass (222 total), Phase 3 fully done
+- 2026-03-05: 04-02 complete — DeclarationsModule with 5-state machine, CSV/Excel bulk upload, 6 validation rules, attachment upload, declaration.submitted event, 26 new tests pass (249 total)
 
 ## Performance Metrics
 
@@ -126,11 +132,12 @@ Plan 4 of 4 complete (03-01 + 03-02 + 03-03 + 03-04 done)
 | 03-01      | 5min     | 1     | 11    |
 | 03-03      | 4min     | 2     | 8     |
 | 03-04      | 4min     | 2     | 8     |
+| 04-02      | 5min     | 2     | 15    |
 
 ## Last Session
 
-- **Timestamp:** 2026-03-05T13:52:00Z
-- **Stopped at:** Phase 04 context gathered
+- **Timestamp:** 2026-03-05T18:00:00Z
+- **Stopped at:** Completed 04-02-PLAN.md (DeclarationsModule)
 
 ## Notes
 
