@@ -115,6 +115,7 @@ Plan 1 of 4 complete (04-01 done)
 - 2026-03-05: 03-01 complete — Contract CRUD, 8-state machine, amendment versioning, version history diffs, snapshot helper, 23 tests pass (171 total)
 - 2026-03-05: 03-03 complete — ObligationsModule with event-driven schedule generation, type/currency mappings, read-only endpoints, all Phase 3 modules + EventEmitter registered in AppModule, 21 tests pass (192 total)
 - 2026-03-05: 03-04 complete — ContractSchedulerService with daily cron, tenant suspension cascade via updateMany, 3 demo contracts seeded, 30 new tests pass (222 total), Phase 3 fully done
+- 2026-03-05: 04-01 complete — 9-state obligation machine, SHA256 lineHash dedup, proration helper, PATCH /obligations/:id/transition, 39 tests pass
 - 2026-03-05: 04-02 complete — DeclarationsModule with 5-state machine, CSV/Excel bulk upload, 6 validation rules, attachment upload, declaration.submitted event, 26 new tests pass (249 total)
 
 ## Performance Metrics
@@ -132,12 +133,20 @@ Plan 1 of 4 complete (04-01 done)
 | 03-01      | 5min     | 1     | 11    |
 | 03-03      | 4min     | 2     | 8     |
 | 03-04      | 4min     | 2     | 8     |
+| 04-01      | 5min     | 2     | 5     |
 | 04-02      | 5min     | 2     | 15    |
+
+## Key Decisions (04-01 additions)
+
+- OBLIGATION_TRANSITIONS map covers all 9 states with explicit rollbacks (pending_calculation->pending_input, on_hold->pending_input/pending_calculation)
+- buildLineHash uses tenantId+periodStart.toISOString()+chargeType input for per-tenant-period-chargeType deduplication
+- calculateProration checks date===1 AND same month/year for the 1.0 shortcut to avoid false positives
+- serviceDefinitionId made nullable (String?) on Obligation to support MAG obligations (plan 04-04)
 
 ## Last Session
 
-- **Timestamp:** 2026-03-05T18:00:00Z
-- **Stopped at:** Completed 04-02-PLAN.md (DeclarationsModule)
+- **Timestamp:** 2026-03-05T17:54:00Z
+- **Stopped at:** Completed 04-01-PLAN.md (Obligation State Machine + LineHash + Transition API)
 
 ## Notes
 
