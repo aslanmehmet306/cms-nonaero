@@ -2,21 +2,21 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in_progress
-stopped_at: Completed 01-04-PLAN.md (Phase 1 complete)
-last_updated: "2026-03-01T10:48:28Z"
+status: unknown
+stopped_at: Completed 02-03-PLAN.md (Tenant CRUD with Stripe)
+last_updated: "2026-03-05T10:43:45.186Z"
 progress:
   total_phases: 2
-  completed_phases: 0
-  total_plans: 4
-  completed_plans: 4
+  completed_phases: 1
+  total_plans: 8
+  completed_plans: 5
 ---
 
 # Project State
 
 ## Current Phase
 
-Phase 1: Foundation & Infrastructure
+Phase 2: Master Data & Formula Engine
 
 ## Phase Status
 
@@ -24,11 +24,11 @@ in_progress
 
 ## Current Plan
 
-Plan 4 of 4 (COMPLETE)
+Plan 3 of 4 (complete — next: Plan 4)
 
 ## Completed Phases
 
-(none)
+- Phase 1: Foundation & Infrastructure (4/4 plans)
 
 ## Session Log
 
@@ -41,6 +41,7 @@ Plan 4 of 4 (COMPLETE)
 ## Progress
 
 [==========] Phase 1: 4/4 plans complete
+[==========...] Phase 2: 3/4 plans complete
 
 ## Key Decisions
 
@@ -62,6 +63,9 @@ Plan 4 of 4 (COMPLETE)
 - Fire-and-forget audit logging (non-blocking, never breaks parent request)
 - Health endpoints excluded from /api/v1 prefix for k8s/LB compatibility
 - Swagger at /api/docs (not /api/v1/docs) with JWT Bearer auth
+- Stripe customer created at tenant creation with uuidv4 idempotency key; stripeCustomerId=null when Stripe not configured
+- All tenant status transitions fully reversible (active<->suspended<->deactivated); cascade to contracts deferred Phase 3
+- taxId and code are immutable after tenant creation (excluded from UpdateTenantDto)
 
 ## Blockers
 
@@ -73,6 +77,7 @@ Plan 4 of 4 (COMPLETE)
 - 2026-03-01: Phase 1 planning completed — 4 plans in 3 waves
 - 2026-03-01: Plan-checker found 4 blockers, 5 warnings — all fixed
 - 2026-03-01: Plans revised: Task split, PostgreSQL 15 fix, auth paths per API docs, unit tests added, health prefix excluded, shared Redis module
+- 2026-03-05: Phase 2, Plan 3 complete — Tenant CRUD with Stripe integration, auto-code generation, reversible status lifecycle
 
 ## Performance Metrics
 
@@ -81,11 +86,13 @@ Plan 4 of 4 (COMPLETE)
 | 01-01      | 7min     | 3     | 31    |
 | 01-03      | 3min     | 2     | 14    |
 | 01-04      | 11min    | 2     | 13    |
+| 02-02      | 4min     | 2     | 14    |
+| 02-03      | 4min     | 1     | 10    |
 
 ## Last Session
 
-- **Timestamp:** 2026-03-01T10:48:28Z
-- **Stopped at:** Completed 01-04-PLAN.md (Phase 1 complete)
+- **Timestamp:** 2026-03-05T10:43:45Z
+- **Stopped at:** Completed 02-03-PLAN.md (Tenant CRUD with Stripe)
 
 ## Notes
 

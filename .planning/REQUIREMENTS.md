@@ -24,7 +24,7 @@
 
 - **R2.1** Airport management — single ADB airport with 3 terminals, 13 units (seed data)
 - **R2.2** Area hierarchy — terminal > floor > zone > unit with self-referential tree
-- **R2.3** Tenant management — CRUD with status lifecycle (active/suspended/deactivated)
+- [x] **R2.3** Tenant management — CRUD with status lifecycle (active/suspended/deactivated)
 - **R2.4** Service definition — 4 types: rent, revenue_share, service_charge, utility
 - **R2.5** Service versioning — draft → published → deprecated lifecycle
 - **R2.6** Billing policy — cut-off day, issue day, due date days, fiscal year config
