@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 04-02-PLAN.md (DeclarationsModule)
+stopped_at: Completed 04-03-PLAN.md (Formula Evaluation + Meter Reading)
 last_updated: "2026-03-05T17:56:15.764Z"
 progress:
   total_phases: 4
@@ -24,14 +24,14 @@ in-progress
 
 ## Current Plan
 
-Plan 1 of 4 complete (04-01 done)
+Plan 3 of 4 complete (04-01, 04-02, 04-03 done)
 
 ## Completed Phases
 
 - Phase 1: Foundation & Infrastructure (4/4 plans)
 - Phase 2: Master Data & Formula Engine (4/4 plans)
 - Phase 3: Contract Domain (4/4 plans)
-- Phase 4: Obligation Declaration (1/4 plans done — 04-01 complete)
+- Phase 4: Obligation Declaration (3/4 plans done — 04-01, 04-02, 04-03 complete)
 
 ## Session Log
 
@@ -46,7 +46,7 @@ Plan 1 of 4 complete (04-01 done)
 [==========] Phase 1: 4/4 plans complete
 [==========] Phase 2: 4/4 plans complete (02-01, 02-02, 02-03, 02-04 done)
 [==========] Phase 3: 4/4 plans complete (03-01 + 03-02 + 03-03 + 03-04 done)
-[==---------] Phase 4: 1/4 plans complete (04-01 done, 04-02 + 04-03 + 04-04 remaining)
+[========----] Phase 4: 3/4 plans complete (04-01, 04-02, 04-03 done — 04-04 remaining)
 
 ## Key Decisions
 
@@ -117,6 +117,7 @@ Plan 1 of 4 complete (04-01 done)
 - 2026-03-05: 03-04 complete — ContractSchedulerService with daily cron, tenant suspension cascade via updateMany, 3 demo contracts seeded, 30 new tests pass (222 total), Phase 3 fully done
 - 2026-03-05: 04-01 complete — 9-state obligation machine, SHA256 lineHash dedup, proration helper, PATCH /obligations/:id/transition, 39 tests pass
 - 2026-03-05: 04-02 complete — DeclarationsModule with 5-state machine, CSV/Excel bulk upload, 6 validation rules, attachment upload, declaration.submitted event, 26 new tests pass (249 total)
+- 2026-03-05: 04-03 complete — Formula evaluation engine (calculateObligation), proration, meter reading submission, bulk CSV upload, ObligationCalculatedEvent, declaration.submitted listener, 21 new tests added
 
 ## Performance Metrics
 
@@ -135,6 +136,15 @@ Plan 1 of 4 complete (04-01 done)
 | 03-04      | 4min     | 2     | 8     |
 | 04-01      | 5min     | 2     | 5     |
 | 04-02      | 5min     | 2     | 15    |
+| 04-03      | 10min    | 2     | 10    |
+
+## Key Decisions (04-03 additions)
+
+- Formula scope resolution order: formula defaults -> customParameters -> area_m2 from contractAreas -> declaration lines (revenue/consumption)
+- Proration post-multiplied when formula expression doesn't reference 'proration_factor' string
+- area_m2 uses Prisma areaM2 (Decimal) with test fallback to area.size mock for compatibility
+- NEGATIVE_CONSUMPTION is hard rejection in meter reading (unlike DEVIATION_THRESHOLD warning in revenue upload)
+- ObligationsListener injects PrismaService directly to query matching obligations without polluting ObligationsService public API
 
 ## Key Decisions (04-01 additions)
 
@@ -145,8 +155,8 @@ Plan 1 of 4 complete (04-01 done)
 
 ## Last Session
 
-- **Timestamp:** 2026-03-05T17:54:00Z
-- **Stopped at:** Completed 04-01-PLAN.md (Obligation State Machine + LineHash + Transition API)
+- **Timestamp:** 2026-03-05T18:10:00Z
+- **Stopped at:** Completed 04-03-PLAN.md (Formula Evaluation + Meter Reading)
 
 ## Notes
 
