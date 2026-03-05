@@ -883,6 +883,114 @@ async function main() {
     console.log('CNT-003: already exists, skipping');
   }
 
+  // 9. Phase 4: Demo declarations + meter readings for CNT-001
+  // ---------------------------------------------------------------------------
+  const cnt001Ref = existingCnt001 ?? await prisma.contract.findFirst({
+    where: { airportId: airport.id, contractNumber: 'CNT-001', version: 1 },
+  });
+
+  if (cnt001Ref) {
+    const existingDecl = await prisma.declaration.findFirst({
+      where: { contractId: cnt001Ref.id, declarationType: 'revenue' },
+    });
+
+    if (!existingDecl) {
+      // Revenue declarations: Jan, Feb, Mar 2026
+      const revenueMonths = [
+        { start: '2026-01-01', end: '2026-01-31', lines: [
+          { category: 'Restaurant', gross: 15000 },
+          { category: 'Retail', gross: 12000 },
+          { category: 'Lounge', gross: 8000 },
+        ]}, // total 35,000 — below monthly MAG (41,667)
+        { start: '2026-02-01', end: '2026-02-28', lines: [
+          { category: 'Restaurant', gross: 18000 },
+          { category: 'Retail', gross: 14000 },
+          { category: 'Lounge', gross: 10000 },
+        ]}, // total 42,000 — above monthly MAG
+        { start: '2026-03-01', end: '2026-03-31', lines: [
+          { category: 'Restaurant', gross: 16000 },
+          { category: 'Retail', gross: 13000 },
+          { category: 'Lounge', gross: 9000 },
+        ]}, // total 38,000 — below monthly MAG
+      ];
+
+      for (const month of revenueMonths) {
+        const decl = await prisma.declaration.create({
+          data: {
+            airportId: airport.id,
+            tenantId: createdTenants['TNT-001'],
+            contractId: cnt001Ref.id,
+            declarationType: 'revenue',
+            periodStart: new Date(month.start),
+            periodEnd: new Date(month.end),
+            status: 'frozen',
+            submittedAt: new Date(month.end),
+            frozenAt: new Date(month.end),
+            frozenToken: `seed-frozen-${month.start}`,
+          },
+        });
+
+        for (const line of month.lines) {
+          await prisma.declarationLine.create({
+            data: {
+              declarationId: decl.id,
+              category: line.category,
+              grossAmount: line.gross,
+              deductions: 0,
+              amount: line.gross,
+            },
+          });
+        }
+      }
+
+      console.log('Phase 4 seed: 3 revenue declarations (Jan-Mar) created for CNT-001');
+
+      // Meter readings: Jan + Feb electricity
+      const meterReadings = [
+        { start: '2026-01-01', end: '2026-01-31', current: 15000, previous: 12500, consumption: 2500 },
+        { start: '2026-02-01', end: '2026-02-28', current: 17800, previous: 15000, consumption: 2800 },
+      ];
+
+      for (const meter of meterReadings) {
+        const meterDecl = await prisma.declaration.create({
+          data: {
+            airportId: airport.id,
+            tenantId: createdTenants['TNT-001'],
+            contractId: cnt001Ref.id,
+            declarationType: 'meter_reading',
+            periodStart: new Date(meter.start),
+            periodEnd: new Date(meter.end),
+            status: 'frozen',
+            submittedAt: new Date(meter.end),
+            frozenAt: new Date(meter.end),
+            frozenToken: `seed-meter-${meter.start}`,
+          },
+        });
+
+        await prisma.declarationLine.create({
+          data: {
+            declarationId: meterDecl.id,
+            category: 'electricity',
+            grossAmount: meter.current,
+            deductions: 0,
+            amount: meter.consumption,
+            unitOfMeasure: 'kWh',
+            notes: JSON.stringify({
+              meterType: 'electricity',
+              unit: 'kWh',
+              location: 'Duty Free Main — DOM-G-R-001',
+              previousReading: meter.previous.toString(),
+            }),
+          },
+        });
+      }
+
+      console.log('Phase 4 seed: 2 meter reading declarations (Jan-Feb) created for CNT-001');
+    } else {
+      console.log('Phase 4 seed: declarations already exist, skipping');
+    }
+  }
+
   console.log('Seeding completed successfully!');
 }
 
