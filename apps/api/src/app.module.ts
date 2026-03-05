@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ClsModule } from 'nestjs-cls';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { validate } from './config/env.validation';
@@ -22,6 +23,7 @@ import { ContractsModule } from './contracts/contracts.module';
 import { ContractAreasModule } from './contract-areas/contract-areas.module';
 import { ContractServicesModule } from './contract-services/contract-services.module';
 import { ObligationsModule } from './obligations/obligations.module';
+import { ContractSchedulerModule } from './scheduler/contract-scheduler.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { ObligationsModule } from './obligations/obligations.module';
     // ContractsService.transition() can emit 'contract.published' and
     // ObligationsListener receives it.
     EventEmitterModule.forRoot(),
+    // ScheduleModule enables @Cron decorators for daily contract lifecycle transitions
+    ScheduleModule.forRoot(),
     DatabaseModule,
     RedisModule,
     AuthModule,
@@ -54,6 +58,8 @@ import { ObligationsModule } from './obligations/obligations.module';
     ContractAreasModule,
     ContractServicesModule,
     ObligationsModule,
+    // Phase 3: Contract lifecycle scheduler
+    ContractSchedulerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
