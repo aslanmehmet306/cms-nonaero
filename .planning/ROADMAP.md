@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation & Infrastructure** - Monorepo setup, Docker, database schema, auth, audit trail
 - [x] **Phase 2: Master Data & Formula Engine** - Airport/area/tenant/service management with formula sandbox (completed 2026-03-05)
 - [x] **Phase 3: Contract Domain** - Contract lifecycle, versioning, service assignment, obligation trigger (completed 2026-03-05)
-- [ ] **Phase 4: Obligation & Declaration** - Obligation scheduling, revenue/utility inputs, MAG settlement
+- [x] **Phase 4: Obligation & Declaration** - Obligation scheduling, revenue/utility inputs, MAG settlement (completed 2026-03-05)
 - [ ] **Phase 5: Billing & Invoice** - BullMQ orchestration, Stripe integration, webhooks, notifications
 - [ ] **Phase 6: Multi-Currency & Reporting** - Exchange rates, reporting dashboard, audit trail UI
 - [ ] **Phase 7: Admin Portal** - React frontend for contract management, billing operations, invoice tracking
@@ -131,10 +131,10 @@ Plans:
 
 Plans:
 
-- [ ] 04-01-PLAN.md — Obligation 9-state machine + lineHash SHA256 deduplication + proration helper + schema migration (nullable serviceDefinitionId)
-- [ ] 04-02-PLAN.md — Declaration CRUD with 5-state machine + freeze token + CSV/Excel bulk upload with 6 validation rules + attachment upload
-- [ ] 04-03-PLAN.md — Formula evaluation with trace + auto-ready/auto-skip + meter reading submission + consumption calculation
-- [ ] 04-04-PLAN.md — MAG monthly settlement + year-end true-up + SettlementEntry records + AppModule wiring + demo seed data
+- [x] 04-01-PLAN.md — Obligation 9-state machine + lineHash SHA256 deduplication + proration helper + schema migration (nullable serviceDefinitionId)
+- [x] 04-02-PLAN.md — Declaration CRUD with 5-state machine + freeze token + CSV/Excel bulk upload with 6 validation rules + attachment upload
+- [x] 04-03-PLAN.md — Formula evaluation with trace + auto-ready/auto-skip + meter reading submission + consumption calculation
+- [x] 04-04-PLAN.md — MAG monthly settlement + year-end true-up + SettlementEntry records + AppModule wiring + demo seed data
 
 **Research Flags**:
 
@@ -161,13 +161,14 @@ Plans:
 9. Bull Board queue monitoring UI accessible at /admin/queues showing job status, failures, retries
 10. SSE (Server-Sent Events) provides real-time progress updates to admin UI during billing run execution
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: TBD
+- [ ] 05-01-PLAN.md — BullMQ billing orchestrator + 10-state machine + concurrency rule + contract snapshot + Bull Board at /admin/queues
+- [ ] 05-02-PLAN.md — SSE progress streaming + partial tenant cancel + re-run (full/delta mode)
+- [ ] 05-03-PLAN.md — Stripe invoice provider (3-step flow) + InvoiceProvider interface + webhook handler with event deduplication
+- [ ] 05-04-PLAN.md — Email notifications (7 Turkish templates) + in-app SSE push + notification bell + event listener wiring + seed data
 
 **Research Flags**:
 
@@ -235,7 +236,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 1. Foundation & Infrastructure  | 4/4            | Complete    | 2026-03-01 |
 | 2. Master Data & Formula Engine | 4/4            | Complete    | 2026-03-05 |
 | 3. Contract Domain              | 4/4            | Complete    | 2026-03-05 |
-| 4. Obligation & Declaration     | 3/4 | In Progress|  |
-| 5. Billing & Invoice            | 0/TBD          | Not started | -          |
+| 4. Obligation & Declaration     | 4/4            | Complete    | 2026-03-05 |
+| 5. Billing & Invoice            | 0/4            | Not started | -          |
 | 6. Multi-Currency & Reporting   | 0/TBD          | Not started | -          |
 | 7. Admin Portal                 | 0/TBD          | Not started | -          |
