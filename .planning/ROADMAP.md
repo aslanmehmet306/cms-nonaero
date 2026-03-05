@@ -103,10 +103,10 @@ Plans:
 
 Plans:
 
-- [ ] 03-01-PLAN.md — Contract CRUD + state machine transitions + amendment versioning with pending_amendment status + snapshot helper
-- [ ] 03-02-PLAN.md — Contract-Area assignment + Contract-Service assignment with formula override validation
-- [ ] 03-03-PLAN.md — Obligation schedule generation on contract publish (event-driven) + read-only obligation endpoints + AppModule wiring
-- [ ] 03-04-PLAN.md — Daily cron scheduler (published->active + amendment flip) + tenant suspension cascade + contract seed data
+- [x] 03-01-PLAN.md — Contract CRUD + state machine transitions + amendment versioning with pending_amendment status + snapshot helper
+- [x] 03-02-PLAN.md — Contract-Area assignment + Contract-Service assignment with formula override validation
+- [x] 03-03-PLAN.md — Obligation schedule generation on contract publish (event-driven) + read-only obligation endpoints + AppModule wiring
+- [x] 03-04-PLAN.md — Daily cron scheduler (published->active + amendment flip) + tenant suspension cascade + contract seed data
 
 ### Phase 4: Obligation & Declaration
 
@@ -127,13 +127,14 @@ Plans:
 7. Proration applies to first obligation when contract starts mid-period (daily proration based on period length)
 8. line_hash (SHA256) unique constraint prevents duplicate obligations for same tenant/period/charge_type
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [ ] 04-01-PLAN.md — Obligation 9-state machine + lineHash SHA256 deduplication + proration helper + schema migration (nullable serviceDefinitionId)
+- [ ] 04-02-PLAN.md — Declaration CRUD with 5-state machine + freeze token + CSV/Excel bulk upload with 6 validation rules + attachment upload
+- [ ] 04-03-PLAN.md — Formula evaluation with trace + auto-ready/auto-skip + meter reading submission + consumption calculation
+- [ ] 04-04-PLAN.md — MAG monthly settlement + year-end true-up + SettlementEntry records + AppModule wiring + demo seed data
 
 **Research Flags**:
 
@@ -229,12 +230,12 @@ Plans:
 **Execution Order:**
 Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
-| Phase                           | Plans Complete | Status      | Completed |
-| ------------------------------- | -------------- | ----------- | --------- |
+| Phase                           | Plans Complete | Status      | Completed  |
+| ------------------------------- | -------------- | ----------- | ---------- |
 | 1. Foundation & Infrastructure  | 4/4            | Complete    | 2026-03-01 |
 | 2. Master Data & Formula Engine | 4/4            | Complete    | 2026-03-05 |
-| 3. Contract Domain              | 4/4 | Complete   | 2026-03-05 |
-| 4. Obligation & Declaration     | 0/TBD          | Not started | -         |
-| 5. Billing & Invoice            | 0/TBD          | Not started | -         |
-| 6. Multi-Currency & Reporting   | 0/TBD          | Not started | -         |
-| 7. Admin Portal                 | 0/TBD          | Not started | -         |
+| 3. Contract Domain              | 4/4            | Complete    | 2026-03-05 |
+| 4. Obligation & Declaration     | 0/4            | Not started | -          |
+| 5. Billing & Invoice            | 0/TBD          | Not started | -          |
+| 6. Multi-Currency & Reporting   | 0/TBD          | Not started | -          |
+| 7. Admin Portal                 | 0/TBD          | Not started | -          |
