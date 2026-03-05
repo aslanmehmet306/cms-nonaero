@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-03-05T20:55:48.676Z"
+status: complete
+stopped_at: Completed 05-04-PLAN.md — Phase 5 fully complete, all 20 plans across 5 phases done
+last_updated: "2026-03-05T21:26:01.506Z"
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 20
-  completed_plans: 19
+  completed_plans: 20
 ---
 
 # Project State
@@ -20,11 +20,11 @@ Phase 5: Billing & Invoice
 
 ## Phase Status
 
-in_progress
+complete
 
 ## Current Plan
 
-Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 next)
+Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 done) -- Phase 5 COMPLETE
 
 ## Completed Phases
 
@@ -47,7 +47,7 @@ Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 next)
 [==========] Phase 2: 4/4 plans complete (02-01, 02-02, 02-03, 02-04 done)
 [==========] Phase 3: 4/4 plans complete (03-01 + 03-02 + 03-03 + 03-04 done)
 [==========] Phase 4: 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
-[=======---] Phase 5: 3/4 plans complete (05-01, 05-02, 05-03 done)
+[==========] Phase 5: 4/4 plans complete (05-01, 05-02, 05-03, 05-04 done)
 
 ## Key Decisions
 
@@ -133,6 +133,7 @@ Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 next)
 - 2026-03-05: 05-01 complete — BillingModule with BullMQ pipeline, 10-state machine, Bull Board, concurrency enforcement, contract snapshot, 13 new tests (294 total)
 - 2026-03-06: 05-02 complete — SSE progress endpoint, partial tenant cancellation, billing run re-run (full/delta), 11 new tests (305 total)
 - 2026-03-06: 05-03 complete — InvoicesModule with Stripe provider, webhook handler, event deduplication, 22 new tests (327 total)
+- 2026-03-06: 05-04 complete — NotificationsModule with 7 Turkish email templates, SSE push, event listeners, 12 new tests (339 total), Phase 5 fully done
 
 ## Performance Metrics
 
@@ -156,6 +157,7 @@ Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 next)
 | 05-01      | 5min     | 1     | 14    |
 | 05-02      | 6min     | 2     | 8     |
 | 05-03      | 7min     | 2     | 15    |
+| 05-04      | 5min     | 2     | 17    |
 
 ## Key Decisions (04-03 additions)
 
@@ -198,10 +200,19 @@ Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 next)
 - Re-run mode: cancelled/rejected -> full, completed/partial -> delta
 - rerunBillingRun delegates to createBillingRun to reuse concurrency check (R8.7) and queue logic
 
+## Key Decisions (05-04 additions)
+
+- MailerModule.forRootAsync with Mailpit transport (localhost:1025, ignoreTLS) for local dev
+- SSE notification endpoint @Public() since EventSource cannot send Authorization headers
+- 5-minute SSE connection timeout via rxjs timer+takeUntil prevents leaks
+- TEMPLATE_MAP returns undefined for billing_run_completed and mag_shortfall (in-app only, no email template)
+- Turkish SUBJECT_MAP provides default email subjects for all notification types
+- EmailService wraps MailerService for consistent error handling and logging
+
 ## Last Session
 
-- **Timestamp:** 2026-03-06T00:14:00Z
-- **Stopped at:** Completed 05-03-PLAN.md
+- **Timestamp:** 2026-03-06T00:23:39Z
+- **Stopped at:** Completed 05-04-PLAN.md — Phase 5 fully complete, all 20 plans across 5 phases done
 
 ## Notes
 
