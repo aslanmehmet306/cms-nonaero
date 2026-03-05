@@ -14,7 +14,7 @@ This roadmap delivers a demo-ready SaaS platform for airport commercial revenue 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Infrastructure** - Monorepo setup, Docker, database schema, auth, audit trail
-- [ ] **Phase 2: Master Data & Formula Engine** - Airport/area/tenant/service management with formula sandbox
+- [x] **Phase 2: Master Data & Formula Engine** - Airport/area/tenant/service management with formula sandbox (completed 2026-03-05)
 - [ ] **Phase 3: Contract Domain** - Contract lifecycle, versioning, service assignment, obligation trigger
 - [ ] **Phase 4: Obligation & Declaration** - Obligation scheduling, revenue/utility inputs, MAG settlement
 - [ ] **Phase 5: Billing & Invoice** - BullMQ orchestration, Stripe integration, webhooks, notifications
@@ -230,7 +230,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase                           | Plans Complete | Status      | Completed |
 | ------------------------------- | -------------- | ----------- | --------- |
 | 1. Foundation & Infrastructure  | 4/4            | Complete    | 2026-03-01 |
-| 2. Master Data & Formula Engine | 2/4 | In Progress|  |
+| 2. Master Data & Formula Engine | 4/4 | Complete   | 2026-03-05 |
 | 3. Contract Domain              | 0/TBD          | Not started | -         |
 | 4. Obligation & Declaration     | 0/TBD          | Not started | -         |
 | 5. Billing & Invoice            | 0/TBD          | Not started | -         |

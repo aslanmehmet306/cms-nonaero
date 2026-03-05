@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Wave 1 complete (02-01, 02-02, 02-03)
-last_updated: "2026-03-05T10:45:22.065Z"
+stopped_at: Phase 2 complete (02-01, 02-02, 02-03, 02-04 done)
+last_updated: "2026-03-05T11:03:01.487Z"
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -24,11 +24,12 @@ in_progress
 
 ## Current Plan
 
-Plan 3 of 4 complete — next: Plan 4 (Wave 2)
+Plan 4 of 4 complete — Phase 2 fully complete
 
 ## Completed Phases
 
 - Phase 1: Foundation & Infrastructure (4/4 plans)
+- Phase 2: Master Data & Formula Engine (4/4 plans)
 
 ## Session Log
 
@@ -41,7 +42,7 @@ Plan 3 of 4 complete — next: Plan 4 (Wave 2)
 ## Progress
 
 [==========] Phase 1: 4/4 plans complete
-[=========-] Phase 2: 3/4 plans complete (02-01, 02-02, 02-03 done)
+[==========] Phase 2: 4/4 plans complete (02-01, 02-02, 02-03, 02-04 done)
 
 ## Key Decisions
 
@@ -71,6 +72,10 @@ Plan 3 of 4 complete — next: Plan 4 (Wave 2)
 - Area depth validated via AREA_TYPE_DEPTH map (O(1) lookup, no recursive ancestor traversal)
 - UpdateAreaDto uses OmitType to make airportId and parentAreaId truly immutable after creation
 - GET /areas/roots route placed before GET /areas/:id to avoid UUID parse collision
+- Formula dry-run uses per-type predefined sample data (SAMPLE_DATA map keyed by FormulaType) merged with user overrides
+- Service publish validates linked formula is published to prevent service-formula billing inconsistency
+- BillingPolicy activate uses Prisma $transaction to atomically archive previous active policy and set new one active
+- Seed uses findFirst+create for formulas/services (no compound unique index on those models)
 
 ## Blockers
 
@@ -87,6 +92,7 @@ Plan 3 of 4 complete — next: Plan 4 (Wave 2)
 - 2026-03-05: 02-01 complete — sandboxed formula engine, 51 tests pass
 - 2026-03-05: 02-02 complete — Airport + Area CRUD with tree queries, 23 tests pass
 - 2026-03-05: 02-03 complete — Tenant CRUD with Stripe integration, auto-code, status lifecycle, 17 tests pass
+- 2026-03-05: 02-04 complete — Formula/Service/BillingPolicy CRUD, 41 new tests, 12 formulas + 8 services seeded, 124 total tests pass
 
 ## Performance Metrics
 
@@ -98,11 +104,12 @@ Plan 3 of 4 complete — next: Plan 4 (Wave 2)
 | 02-01      | 7min     | 2     | 12    |
 | 02-02      | 4min     | 2     | 14    |
 | 02-03      | 4min     | 1     | 10    |
+| 02-04      | 11min    | 3     | 24    |
 
 ## Last Session
 
-- **Timestamp:** 2026-03-05T10:45:22Z
-- **Stopped at:** Wave 1 complete (02-01, 02-02, 02-03)
+- **Timestamp:** 2026-03-05T11:00:00Z
+- **Stopped at:** Phase 2 complete (02-01, 02-02, 02-03, 02-04 done)
 
 ## Notes
 
