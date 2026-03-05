@@ -32,6 +32,7 @@ export class BillingService {
   constructor(
     private readonly prisma: PrismaService,
     @InjectQueue('billing-run') private readonly billingRunQueue: Queue,
+    @InjectQueue('invoice-generation') private readonly invoiceGenerationQueue: Queue,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -305,7 +306,7 @@ export class BillingService {
       );
     }
 
-    return this.prisma.billingRun.update({
+    const approved = await this.prisma.billingRun.update({
       where: { id },
       data: {
         status: BillingRunStatus.approved,
@@ -313,6 +314,21 @@ export class BillingService {
         approvedAt: new Date(),
       },
     });
+
+    // Enqueue invoice generation after approval
+    await this.invoiceGenerationQueue.add(
+      'generate-invoices',
+      { billingRunId: id },
+      {
+        jobId: `invoice-${id}`,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+      },
+    );
+
+    this.logger.log(`Billing run ${id} approved — invoice generation enqueued`);
+
+    return approved;
   }
 
   /**

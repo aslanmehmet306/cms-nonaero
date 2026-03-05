@@ -32,6 +32,7 @@ describe('BillingService', () => {
     };
   };
   let queue: { add: jest.Mock };
+  let invoiceQueue: { add: jest.Mock };
   let eventEmitter: { emit: jest.Mock };
 
   const airportId = 'airport-uuid-1';
@@ -59,6 +60,7 @@ describe('BillingService', () => {
     };
 
     queue = { add: jest.fn().mockResolvedValue({ id: 'job-1' }) };
+    invoiceQueue = { add: jest.fn().mockResolvedValue({ id: 'invoice-job-1' }) };
     eventEmitter = { emit: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -66,6 +68,7 @@ describe('BillingService', () => {
         BillingService,
         { provide: PrismaService, useValue: prisma },
         { provide: getQueueToken('billing-run'), useValue: queue },
+        { provide: getQueueToken('invoice-generation'), useValue: invoiceQueue },
         { provide: EventEmitter2, useValue: eventEmitter },
       ],
     }).compile();

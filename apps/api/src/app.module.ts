@@ -30,6 +30,7 @@ import { ContractSchedulerModule } from './scheduler/contract-scheduler.module';
 import { DeclarationsModule } from './declarations/declarations.module';
 import { SettlementModule } from './settlement/settlement.module';
 import { BillingModule } from './billing/billing.module';
+import { InvoicesModule } from './invoices/invoices.module';
 
 @Module({
   imports: [
@@ -87,6 +88,7 @@ import { BillingModule } from './billing/billing.module';
     SettlementModule,
     // Phase 5: Billing & Invoice
     BillingModule,
+    InvoicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
