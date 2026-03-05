@@ -11,6 +11,8 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AuditModule } from './audit/audit.module';
 import { HealthModule } from './health/health.module';
+import { AirportsModule } from './airports/airports.module';
+import { AreasModule } from './areas/areas.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { HealthModule } from './health/health.module';
     UsersModule,
     AuditModule,
     HealthModule,
+    AirportsModule,
+    AreasModule,
   ],
   controllers: [AppController],
   providers: [AppService],

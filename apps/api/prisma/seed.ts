@@ -9,6 +9,273 @@ async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, BCRYPT_ROUNDS);
 }
 
+// ---------------------------------------------------------------------------
+// ADB Airport Area Hierarchy
+// ---------------------------------------------------------------------------
+// Structure:
+//   3 terminals: DOM (Domestic), INT (International), CIP (VIP Lounge)
+//   Each terminal has 3 floors: Ground (G), First (1F), Airside (AIR)
+//   Each floor has 1-3 zones: Retail (R), Food Court (F), Gate (GT)
+//   Each zone has leasable units with realistic area_m2 values
+//   Total: 13+ leasable units
+// ---------------------------------------------------------------------------
+
+interface UnitSpec {
+  code: string;
+  name: string;
+  areaM2: number;
+}
+
+interface ZoneSpec {
+  code: string;
+  name: string;
+  units: UnitSpec[];
+}
+
+interface FloorSpec {
+  code: string;
+  name: string;
+  zones: ZoneSpec[];
+}
+
+interface TerminalSpec {
+  code: string;
+  name: string;
+  floors: FloorSpec[];
+}
+
+const adbHierarchy: TerminalSpec[] = [
+  // -------------------------------------------------------------------------
+  // DOMESTIC TERMINAL
+  // -------------------------------------------------------------------------
+  {
+    code: 'DOM',
+    name: 'Domestic Terminal',
+    floors: [
+      {
+        code: 'DOM-G',
+        name: 'Domestic Ground Floor',
+        zones: [
+          {
+            code: 'DOM-G-R',
+            name: 'Domestic Ground Retail Zone',
+            units: [
+              { code: 'DOM-G-R-001', name: 'Duty Free Main', areaM2: 250.0 },
+              { code: 'DOM-G-R-002', name: 'Newsagent & Books', areaM2: 45.5 },
+            ],
+          },
+          {
+            code: 'DOM-G-F',
+            name: 'Domestic Ground Food Court',
+            units: [
+              { code: 'DOM-G-F-001', name: 'Ground Floor Cafe', areaM2: 78.0 },
+            ],
+          },
+        ],
+      },
+      {
+        code: 'DOM-1F',
+        name: 'Domestic First Floor',
+        zones: [
+          {
+            code: 'DOM-1F-R',
+            name: 'Domestic First Floor Retail Zone',
+            units: [
+              { code: 'DOM-1F-R-001', name: 'Luxury Accessories', areaM2: 62.0 },
+              { code: 'DOM-1F-R-002', name: 'Electronics Kiosk', areaM2: 38.75 },
+            ],
+          },
+        ],
+      },
+      {
+        code: 'DOM-AIR',
+        name: 'Domestic Airside',
+        zones: [
+          {
+            code: 'DOM-AIR-GT',
+            name: 'Domestic Airside Gate Zone',
+            units: [
+              { code: 'DOM-AIR-GT-001', name: 'Gate Lounge Cafe A', areaM2: 55.0 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  // -------------------------------------------------------------------------
+  // INTERNATIONAL TERMINAL
+  // -------------------------------------------------------------------------
+  {
+    code: 'INT',
+    name: 'International Terminal',
+    floors: [
+      {
+        code: 'INT-G',
+        name: 'International Ground Floor',
+        zones: [
+          {
+            code: 'INT-G-R',
+            name: 'International Ground Retail Zone',
+            units: [
+              { code: 'INT-G-R-001', name: 'International Duty Free', areaM2: 320.0 },
+              { code: 'INT-G-R-002', name: 'Travel Essentials', areaM2: 42.0 },
+            ],
+          },
+          {
+            code: 'INT-G-F',
+            name: 'International Ground Food Court',
+            units: [
+              { code: 'INT-G-F-001', name: 'International Food Hall', areaM2: 120.5 },
+            ],
+          },
+        ],
+      },
+      {
+        code: 'INT-1F',
+        name: 'International First Floor',
+        zones: [
+          {
+            code: 'INT-1F-R',
+            name: 'International First Floor Retail Zone',
+            units: [
+              { code: 'INT-1F-R-001', name: 'Fashion Boutique', areaM2: 85.0 },
+            ],
+          },
+        ],
+      },
+      {
+        code: 'INT-AIR',
+        name: 'International Airside',
+        zones: [
+          {
+            code: 'INT-AIR-GT',
+            name: 'International Airside Gate Zone',
+            units: [
+              { code: 'INT-AIR-GT-001', name: 'Airside Lounge Bar', areaM2: 95.0 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  // -------------------------------------------------------------------------
+  // CIP (VIP) TERMINAL
+  // -------------------------------------------------------------------------
+  {
+    code: 'CIP',
+    name: 'CIP Lounge Terminal',
+    floors: [
+      {
+        code: 'CIP-G',
+        name: 'CIP Ground Floor',
+        zones: [
+          {
+            code: 'CIP-G-R',
+            name: 'CIP Ground Retail Zone',
+            units: [
+              { code: 'CIP-G-R-001', name: 'VIP Gift Shop', areaM2: 35.0 },
+            ],
+          },
+        ],
+      },
+      {
+        code: 'CIP-1F',
+        name: 'CIP First Floor',
+        zones: [
+          {
+            code: 'CIP-1F-F',
+            name: 'CIP First Floor Dining',
+            units: [
+              { code: 'CIP-1F-F-001', name: 'CIP Executive Dining', areaM2: 68.0 },
+            ],
+          },
+        ],
+      },
+      {
+        code: 'CIP-AIR',
+        name: 'CIP Airside',
+        zones: [
+          {
+            code: 'CIP-AIR-GT',
+            name: 'CIP Airside Lounge',
+            units: [
+              { code: 'CIP-AIR-GT-001', name: 'Premium Lounge Retail', areaM2: 28.0 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+];
+
+async function seedAirportHierarchy(airportId: string): Promise<void> {
+  for (const terminal of adbHierarchy) {
+    // Terminal (depth 1)
+    const terminalArea = await prisma.area.upsert({
+      where: { airportId_code: { airportId, code: terminal.code } },
+      update: {},
+      create: {
+        airportId,
+        code: terminal.code,
+        name: terminal.name,
+        areaType: 'terminal',
+        isLeasable: false,
+      },
+    });
+
+    for (const floor of terminal.floors) {
+      // Floor (depth 2)
+      const floorArea = await prisma.area.upsert({
+        where: { airportId_code: { airportId, code: floor.code } },
+        update: {},
+        create: {
+          airportId,
+          parentAreaId: terminalArea.id,
+          code: floor.code,
+          name: floor.name,
+          areaType: 'floor',
+          isLeasable: false,
+        },
+      });
+
+      for (const zone of floor.zones) {
+        // Zone (depth 3)
+        const zoneArea = await prisma.area.upsert({
+          where: { airportId_code: { airportId, code: zone.code } },
+          update: {},
+          create: {
+            airportId,
+            parentAreaId: floorArea.id,
+            code: zone.code,
+            name: zone.name,
+            areaType: 'zone',
+            isLeasable: false,
+          },
+        });
+
+        for (const unit of zone.units) {
+          // Unit (depth 4, leasable)
+          await prisma.area.upsert({
+            where: { airportId_code: { airportId, code: unit.code } },
+            update: {},
+            create: {
+              airportId,
+              parentAreaId: zoneArea.id,
+              code: unit.code,
+              name: unit.name,
+              areaType: 'unit',
+              areaM2: unit.areaM2,
+              isLeasable: true,
+            },
+          });
+        }
+      }
+    }
+  }
+}
+
 async function main() {
   console.log('Seeding database...');
 
@@ -26,124 +293,11 @@ async function main() {
   });
   console.log(`Airport: ${airport.name} (${airport.code})`);
 
-  // 2. Area hierarchy: 3 terminals, 2 floors each, 2 zones per floor, 1-2 units per zone
-  const terminals = [
-    { code: 'DOM', name: 'Domestic Terminal' },
-    { code: 'INT', name: 'International Terminal' },
-    { code: 'CIP', name: 'CIP Terminal' },
-  ];
-
-  for (const terminal of terminals) {
-    const terminalArea = await prisma.area.upsert({
-      where: {
-        airportId_code: { airportId: airport.id, code: terminal.code },
-      },
-      update: {},
-      create: {
-        airportId: airport.id,
-        code: terminal.code,
-        name: terminal.name,
-        areaType: 'terminal',
-        isLeasable: false,
-      },
-    });
-
-    const floors = [
-      { code: `${terminal.code}-GF`, name: `${terminal.name} Ground Floor` },
-      { code: `${terminal.code}-1F`, name: `${terminal.name} First Floor` },
-    ];
-
-    for (const floor of floors) {
-      const floorArea = await prisma.area.upsert({
-        where: {
-          airportId_code: { airportId: airport.id, code: floor.code },
-        },
-        update: {},
-        create: {
-          airportId: airport.id,
-          parentAreaId: terminalArea.id,
-          code: floor.code,
-          name: floor.name,
-          areaType: 'floor',
-          isLeasable: false,
-        },
-      });
-
-      const zones = [
-        {
-          code: `${floor.code}-A`,
-          name: `${floor.name} Zone A`,
-          units: [
-            {
-              code: `${floor.code}-A-001`,
-              name: `Unit ${floor.code}-A-001`,
-              areaM2: 45.5,
-            },
-          ],
-        },
-        {
-          code: `${floor.code}-B`,
-          name: `${floor.name} Zone B`,
-          units: [
-            {
-              code: `${floor.code}-B-001`,
-              name: `Unit ${floor.code}-B-001`,
-              areaM2: 62.0,
-            },
-            ...(terminal.code !== 'CIP'
-              ? [
-                  {
-                    code: `${floor.code}-B-002`,
-                    name: `Unit ${floor.code}-B-002`,
-                    areaM2: 38.75,
-                  },
-                ]
-              : []),
-          ],
-        },
-      ];
-
-      for (const zone of zones) {
-        const zoneArea = await prisma.area.upsert({
-          where: {
-            airportId_code: { airportId: airport.id, code: zone.code },
-          },
-          update: {},
-          create: {
-            airportId: airport.id,
-            parentAreaId: floorArea.id,
-            code: zone.code,
-            name: zone.name,
-            areaType: 'zone',
-            isLeasable: false,
-          },
-        });
-
-        for (const unit of zone.units) {
-          await prisma.area.upsert({
-            where: {
-              airportId_code: { airportId: airport.id, code: unit.code },
-            },
-            update: {},
-            create: {
-              airportId: airport.id,
-              parentAreaId: zoneArea.id,
-              code: unit.code,
-              name: unit.name,
-              areaType: 'unit',
-              areaM2: unit.areaM2,
-              isLeasable: true,
-            },
-          });
-        }
-      }
-    }
-  }
+  // 2. Area hierarchy: 3 terminals, 3 floors each, 1-3 zones per floor, 1-2 units per zone
+  await seedAirportHierarchy(airport.id);
 
   const areaCount = await prisma.area.count();
-  const unitCount = await prisma.area.count({
-    where: { areaType: 'unit' },
-  });
+  const unitCount = await prisma.area.count({ where: { areaType: 'unit' } });
   console.log(`Areas: ${areaCount} total, ${unitCount} leasable units`);
 
   // 3. Tenants
@@ -262,20 +416,28 @@ async function main() {
   }
   console.log(`Users: ${users.length} created`);
 
-  // 5. Billing policy
-  await prisma.billingPolicy.create({
-    data: {
-      airportId: airport.id,
-      cutOffDay: 10,
-      issueDay: 15,
-      dueDateDays: 30,
-      leadDays: 5,
-      fiscalYearStartMonth: 1,
-      effectiveFrom: new Date('2026-01-01'),
-      status: 'active',
-    },
+  // 5. Billing policy (idempotent — only create if none exist for this airport)
+  const existingPolicy = await prisma.billingPolicy.findFirst({
+    where: { airportId: airport.id },
   });
-  console.log('Billing policy created');
+
+  if (!existingPolicy) {
+    await prisma.billingPolicy.create({
+      data: {
+        airportId: airport.id,
+        cutOffDay: 10,
+        issueDay: 15,
+        dueDateDays: 30,
+        leadDays: 5,
+        fiscalYearStartMonth: 1,
+        effectiveFrom: new Date('2026-01-01'),
+        status: 'active',
+      },
+    });
+    console.log('Billing policy created');
+  } else {
+    console.log('Billing policy already exists, skipping');
+  }
 
   console.log('Seeding completed successfully!');
 }
