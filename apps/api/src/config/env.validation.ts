@@ -47,6 +47,10 @@ export class EnvironmentVariables {
   @IsEnum(NodeEnv)
   @IsOptional()
   NODE_ENV: NodeEnv = NodeEnv.development;
+
+  @IsString()
+  @IsOptional()
+  STRIPE_SECRET_KEY?: string;
 }
 
 export function validate(config: Record<string, unknown>) {
