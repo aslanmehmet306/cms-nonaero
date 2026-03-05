@@ -1,8 +1,10 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Query,
 } from '@nestjs/common';
 import {
@@ -12,15 +14,17 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { UserRole } from '@shared-types/enums';
+import { Audit } from '../common/decorators/audit.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { ObligationsService } from './obligations.service';
 import { QueryObligationsDto } from './dto/query-obligations.dto';
+import { TransitionObligationDto } from './dto/transition-obligation.dto';
 
 /**
- * ObligationsController — read-only obligation endpoints.
+ * ObligationsController — obligation read and state-transition endpoints.
  *
- * Obligations are system-generated (via contract.published event) and
- * cannot be created or updated via the API in Phase 3.
+ * Obligations are system-generated (via contract.published event).
+ * Mutations are limited to state transitions via PATCH /obligations/:id/transition.
  */
 @ApiTags('Obligations')
 @ApiBearerAuth()
@@ -57,5 +61,44 @@ export class ObligationsController {
   @ApiResponse({ status: 404, description: 'Obligation not found' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.obligationsService.findOne(id);
+  }
+
+  @Patch(':id/transition')
+  @Roles(
+    UserRole.commercial_manager,
+    UserRole.finance,
+    UserRole.airport_admin,
+    UserRole.super_admin,
+  )
+  @Audit('Obligation')
+  @ApiOperation({ summary: 'Transition an obligation to a new status' })
+  @ApiResponse({ status: 200, description: 'Obligation updated with new status' })
+  @ApiResponse({ status: 400, description: 'Invalid state transition' })
+  @ApiResponse({ status: 403, description: 'Insufficient role' })
+  @ApiResponse({ status: 404, description: 'Obligation not found' })
+  transition(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: TransitionObligationDto,
+  ) {
+    return this.obligationsService.transitionObligation(id, dto.toStatus, {
+      skippedReason: dto.skippedReason,
+    });
+  }
+
+  @Get(':id/trace')
+  @Roles(
+    UserRole.commercial_manager,
+    UserRole.finance,
+    UserRole.airport_admin,
+    UserRole.super_admin,
+    UserRole.auditor,
+  )
+  @ApiOperation({ summary: 'Get the calculation trace for an obligation (UI drill-down convenience)' })
+  @ApiResponse({ status: 200, description: 'Calculation trace object or null if not yet calculated' })
+  @ApiResponse({ status: 403, description: 'Insufficient role' })
+  @ApiResponse({ status: 404, description: 'Obligation not found' })
+  async getTrace(@Param('id', ParseUUIDPipe) id: string) {
+    const obligation = await this.obligationsService.findOne(id);
+    return obligation.calculationTrace ?? null;
   }
 }
