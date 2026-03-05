@@ -3,15 +3,18 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { ObligationsService } from './obligations.service';
 import { ContractPublishedEvent } from './events/contract-published.event';
 import { DeclarationSubmittedEvent } from '../declarations/events/declaration-submitted.event';
+import { ObligationCalculatedEvent } from './events/obligation-calculated.event';
 import { ChargeType, DeclarationType, ObligationStatus } from '@shared-types/enums';
 import { PrismaService } from '../database/prisma.service';
+import { SettlementService } from '../settlement/settlement.service';
 
 /**
  * ObligationsListener — listens for system events and triggers obligation lifecycle actions:
  *
- * 1. `contract.published`   → Generate obligation schedule for the contract
+ * 1. `contract.published`    → Generate obligation schedule for the contract
  * 2. `declaration.submitted` → Transition matching obligations to pending_calculation
- *                              and trigger formula evaluation
+ *                               and trigger formula evaluation
+ * 3. `obligation.calculated` → Trigger monthly MAG settlement for revenue_share obligations
  *
  * Both handlers use { async: true } so the originating endpoint returns immediately.
  * Errors are caught and logged — event handlers must not throw to protect callers.
@@ -23,6 +26,7 @@ export class ObligationsListener {
   constructor(
     private readonly obligationsService: ObligationsService,
     private readonly prisma: PrismaService,
+    private readonly settlementService: SettlementService,
   ) {}
 
   @OnEvent('contract.published', { async: true })
@@ -120,6 +124,37 @@ export class ObligationsListener {
       this.logger.error(
         `Failed to handle declaration.submitted for declaration ${event.declarationId}`,
         error,
+      );
+    }
+  }
+
+  /**
+   * Handle obligation.calculated event.
+   *
+   * When a revenue_share obligation is calculated, trigger monthly MAG settlement
+   * to check if a shortfall obligation needs to be created.
+   *
+   * Only triggers for revenue_share chargeType — other types are ignored.
+   */
+  @OnEvent('obligation.calculated', { async: true })
+  async handleObligationCalculated(event: ObligationCalculatedEvent): Promise<void> {
+    // Only trigger MAG check for revenue_share obligations
+    if (event.chargeType !== ChargeType.revenue_share) return;
+
+    this.logger.log(
+      `Received obligation.calculated event for obligation ${event.obligationId} ` +
+        `(contract ${event.contractId}, chargeType=${event.chargeType})`,
+    );
+
+    try {
+      await this.settlementService.calculateMonthlyMag(
+        event.contractId,
+        event.periodStart,
+        event.periodEnd,
+      );
+    } catch (error) {
+      this.logger.error(
+        `MAG settlement failed for contract ${event.contractId}: ${(error as Error).message}`,
       );
     }
   }
