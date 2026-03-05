@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-stopped_at: Completed 02-01-PLAN.md (formula engine package)
+status: in_progress
+stopped_at: Wave 1 complete (02-01, 02-02, 02-03)
 last_updated: "2026-03-05T10:45:22.065Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -24,7 +24,7 @@ in_progress
 
 ## Current Plan
 
-Plan 3 of 4 (complete — next: Plan 4)
+Plan 3 of 4 complete — next: Plan 4 (Wave 2)
 
 ## Completed Phases
 
@@ -41,7 +41,7 @@ Plan 3 of 4 (complete — next: Plan 4)
 ## Progress
 
 [==========] Phase 1: 4/4 plans complete
-[==========...] Phase 2: 3/4 plans complete
+[=========-] Phase 2: 3/4 plans complete (02-01, 02-02, 02-03 done)
 
 ## Key Decisions
 
@@ -68,6 +68,9 @@ Plan 3 of 4 (complete — next: Plan 4)
 - taxId and code are immutable after tenant creation (excluded from UpdateTenantDto)
 - Formula sandbox via scope injection (not math.import override): blocks dangerous functions without breaking internal math.js evaluate calls
 - Float normalization with toPrecision(15) before Decimal wrapping: achieves 0.1+0.2=0.3 exactly without Decimal constructor preserving JS float noise
+- Area depth validated via AREA_TYPE_DEPTH map (O(1) lookup, no recursive ancestor traversal)
+- UpdateAreaDto uses OmitType to make airportId and parentAreaId truly immutable after creation
+- GET /areas/roots route placed before GET /areas/:id to avoid UUID parse collision
 
 ## Blockers
 
@@ -79,7 +82,11 @@ Plan 3 of 4 (complete — next: Plan 4)
 - 2026-03-01: Phase 1 planning completed — 4 plans in 3 waves
 - 2026-03-01: Plan-checker found 4 blockers, 5 warnings — all fixed
 - 2026-03-01: Plans revised: Task split, PostgreSQL 15 fix, auth paths per API docs, unit tests added, health prefix excluded, shared Redis module
-- 2026-03-05: Phase 2, Plan 3 complete — Tenant CRUD with Stripe integration, auto-code generation, reversible status lifecycle
+- 2026-03-05: Phase 2 planning complete — 4 plans in 2 waves
+- 2026-03-05: Wave 1 parallel execution — 02-01 (Formula Engine), 02-02 (Airport+Area CRUD), 02-03 (Tenant CRUD)
+- 2026-03-05: 02-01 complete — sandboxed formula engine, 51 tests pass
+- 2026-03-05: 02-02 complete — Airport + Area CRUD with tree queries, 23 tests pass
+- 2026-03-05: 02-03 complete — Tenant CRUD with Stripe integration, auto-code, status lifecycle, 17 tests pass
 
 ## Performance Metrics
 
@@ -88,14 +95,14 @@ Plan 3 of 4 (complete — next: Plan 4)
 | 01-01      | 7min     | 3     | 31    |
 | 01-03      | 3min     | 2     | 14    |
 | 01-04      | 11min    | 2     | 13    |
+| 02-01      | 7min     | 2     | 12    |
 | 02-02      | 4min     | 2     | 14    |
 | 02-03      | 4min     | 1     | 10    |
-| 02-01      | 7min     | 2     | 12    |
 
 ## Last Session
 
-- **Timestamp:** 2026-03-05T10:43:45Z
-- **Stopped at:** Completed 02-01-PLAN.md (formula engine package)
+- **Timestamp:** 2026-03-05T10:45:22Z
+- **Stopped at:** Wave 1 complete (02-01, 02-02, 02-03)
 
 ## Notes
 
@@ -104,3 +111,4 @@ Plan 3 of 4 (complete — next: Plan 4)
 - Wave order: 01-01 (DONE) → [01-02 ∥ 01-03] → 01-04
 - Docker/PostgreSQL not installed on dev machine -- migration and seed deferred
 - 7-phase roadmap follows critical path: Foundation → Master Data → Contract → Obligation → Billing → Invoice → Admin UI
+- Phase 2 wave order: [02-01 ∥ 02-02 ∥ 02-03] → 02-04
