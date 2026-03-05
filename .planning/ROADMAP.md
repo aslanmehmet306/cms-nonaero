@@ -196,7 +196,7 @@ Plans:
 
 Plans:
 
-- [ ] 06-01-PLAN.md — ExchangeRate Prisma model + CRUD endpoints + rate lookup service + currency conversion helper
+- [x] 06-01-PLAN.md — ExchangeRate Prisma model + CRUD endpoints + rate lookup service + currency conversion helper
 - [ ] 06-02-PLAN.md — Enhanced audit trail with entity timeline drill-down, field-level diffs, obligation trace + contract summary enrichment
 - [ ] 06-03-PLAN.md — ReportsModule with dashboard KPIs, revenue summary (by tenant + service type), aging report (30/60/90), currency conversion display
 

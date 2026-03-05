@@ -2,29 +2,29 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-stopped_at: Completed 05-04-PLAN.md — Phase 5 fully complete, all 20 plans across 5 phases done
-last_updated: "2026-03-05T21:32:48.929Z"
+status: in-progress
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-03-06T00:55:40Z"
 progress:
-  total_phases: 5
+  total_phases: 7
   completed_phases: 5
-  total_plans: 20
-  completed_plans: 20
+  total_plans: 23
+  completed_plans: 21
 ---
 
 # Project State
 
 ## Current Phase
 
-Phase 5: Billing & Invoice
+Phase 6: Multi-Currency & Reporting
 
 ## Phase Status
 
-complete
+in-progress
 
 ## Current Plan
 
-Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 done) -- Phase 5 COMPLETE
+Plan 1 of 3 (06-01 done)
 
 ## Completed Phases
 
@@ -32,6 +32,7 @@ Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 done) -- Phase 5 COMPLETE
 - Phase 2: Master Data & Formula Engine (4/4 plans)
 - Phase 3: Contract Domain (4/4 plans)
 - Phase 4: Obligation Declaration (4/4 plans — 04-01, 04-02, 04-03, 04-04 complete)
+- Phase 5: Billing & Invoice (4/4 plans — 05-01, 05-02, 05-03, 05-04 complete)
 
 ## Session Log
 
@@ -48,6 +49,7 @@ Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 done) -- Phase 5 COMPLETE
 [==========] Phase 3: 4/4 plans complete (03-01 + 03-02 + 03-03 + 03-04 done)
 [==========] Phase 4: 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
 [==========] Phase 5: 4/4 plans complete (05-01, 05-02, 05-03, 05-04 done)
+[===-------] Phase 6: 1/3 plans complete (06-01 done)
 
 ## Key Decisions
 
@@ -134,8 +136,7 @@ Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 done) -- Phase 5 COMPLETE
 - 2026-03-06: 05-02 complete — SSE progress endpoint, partial tenant cancellation, billing run re-run (full/delta), 11 new tests (305 total)
 - 2026-03-06: 05-03 complete — InvoicesModule with Stripe provider, webhook handler, event deduplication, 22 new tests (327 total)
 - 2026-03-06: 05-04 complete — NotificationsModule with 7 Turkish email templates, SSE push, event listeners, 12 new tests (339 total), Phase 5 fully done
-- 2026-03-06: 06-01 complete — ExchangeRatesModule with TCMB rate fetch, conversion service, Prisma model
-- 2026-03-06: 06-02 complete — Entity timeline drill-down with field-level diffs, Obligation/Contract enrichment, 10 new tests (357 total)
+- 2026-03-06: 06-01 complete — ExchangeRate model + service with Decimal(19,8) FX precision, effective-date rate lookup, 6-endpoint REST controller, 8 new tests (357 total)
 
 ## Performance Metrics
 
@@ -160,7 +161,7 @@ Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 done) -- Phase 5 COMPLETE
 | 05-02      | 6min     | 2     | 8     |
 | 05-03      | 7min     | 2     | 15    |
 | 05-04      | 5min     | 2     | 17    |
-| 06-02      | 3min     | 2     | 4     |
+| 06-01      | 5min     | 2     | 9     |
 
 ## Key Decisions (04-03 additions)
 
@@ -212,17 +213,17 @@ Plan 4 of 4 (05-01 done, 05-02 done, 05-03 done, 05-04 done) -- Phase 5 COMPLETE
 - Turkish SUBJECT_MAP provides default email subjects for all notification types
 - EmailService wraps MailerService for consistent error handling and logging
 
-## Key Decisions (06-02 additions)
+## Key Decisions (06-01 additions)
 
-- diffStates skips updatedAt/createdAt fields to reduce noise in audit drill-down
-- Domain enrichment uses entityType switch for Obligation and Contract, null for all others
-- Contract enrichment uses Prisma _count relation for obligationCount (single query, no N+1)
-- Timeline route /audit/timeline/ placed before /audit/entity/ to avoid NestJS route collision
+- Prisma generate works without Docker (only migrate needs it) -- regenerated client for ExchangeRate types
+- Decimal(19,8) precision for FX rates per plan specification
+- GET /exchange-rates/lookup placed before GET /exchange-rates/:id to avoid UUID parse collision
+- Identity rate shortcut for same-currency pairs (no DB round-trip, returns 1.0)
 
 ## Last Session
 
-- **Timestamp:** 2026-03-06T21:54:00Z
-- **Stopped at:** Completed 06-02-PLAN.md
+- **Timestamp:** 2026-03-06T00:55:40Z
+- **Stopped at:** Completed 06-01-PLAN.md
 
 ## Notes
 
