@@ -227,6 +227,7 @@ enum ContractStatus {
   in_review
   published
   active
+  pending_amendment
   amended
   suspended
   terminated
