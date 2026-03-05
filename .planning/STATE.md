@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-03-PLAN.md (Tenant CRUD with Stripe)
-last_updated: "2026-03-05T10:43:45.186Z"
+stopped_at: Completed 02-01-PLAN.md (formula engine package)
+last_updated: "2026-03-05T10:45:22.065Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -66,6 +66,8 @@ Plan 3 of 4 (complete — next: Plan 4)
 - Stripe customer created at tenant creation with uuidv4 idempotency key; stripeCustomerId=null when Stripe not configured
 - All tenant status transitions fully reversible (active<->suspended<->deactivated); cascade to contracts deferred Phase 3
 - taxId and code are immutable after tenant creation (excluded from UpdateTenantDto)
+- Formula sandbox via scope injection (not math.import override): blocks dangerous functions without breaking internal math.js evaluate calls
+- Float normalization with toPrecision(15) before Decimal wrapping: achieves 0.1+0.2=0.3 exactly without Decimal constructor preserving JS float noise
 
 ## Blockers
 
@@ -88,11 +90,12 @@ Plan 3 of 4 (complete — next: Plan 4)
 | 01-04      | 11min    | 2     | 13    |
 | 02-02      | 4min     | 2     | 14    |
 | 02-03      | 4min     | 1     | 10    |
+| 02-01      | 7min     | 2     | 12    |
 
 ## Last Session
 
 - **Timestamp:** 2026-03-05T10:43:45Z
-- **Stopped at:** Completed 02-03-PLAN.md (Tenant CRUD with Stripe)
+- **Stopped at:** Completed 02-01-PLAN.md (formula engine package)
 
 ## Notes
 
