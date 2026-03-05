@@ -282,7 +282,7 @@ model Obligation {
   contractId            String            @map("contract_id")
   contractVersion       Int               @map("contract_version")
   tenantId              String            @map("tenant_id")
-  serviceDefinitionId   String            @map("service_definition_id")
+  serviceDefinitionId   String?           @map("service_definition_id")
   obligationType        ObligationType    @map("obligation_type")
   chargeType            ChargeType        @map("charge_type")
   periodStart           DateTime          @map("period_start") @db.Date
