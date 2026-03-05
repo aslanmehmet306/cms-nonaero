@@ -9,7 +9,7 @@ progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 20
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # Project State
@@ -24,7 +24,7 @@ in_progress
 
 ## Current Plan
 
-Plan 2 of 4 (05-01 done, 05-02 next)
+Plan 3 of 4 (05-01 done, 05-02 done, 05-03 next)
 
 ## Completed Phases
 
@@ -47,7 +47,7 @@ Plan 2 of 4 (05-01 done, 05-02 next)
 [==========] Phase 2: 4/4 plans complete (02-01, 02-02, 02-03, 02-04 done)
 [==========] Phase 3: 4/4 plans complete (03-01 + 03-02 + 03-03 + 03-04 done)
 [==========] Phase 4: 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
-[==--------] Phase 5: 1/4 plans complete (05-01 done)
+[=====-----] Phase 5: 2/4 plans complete (05-01, 05-02 done)
 
 ## Key Decisions
 
@@ -121,6 +121,7 @@ Plan 2 of 4 (05-01 done, 05-02 next)
 - 2026-03-05: 04-03 complete — Formula evaluation engine (calculateObligation), proration, meter reading submission, bulk CSV upload, ObligationCalculatedEvent, declaration.submitted listener, 21 new tests added
 - 2026-03-05: 04-04 complete — SettlementModule with MAG monthly settlement, year-end true-up, obligation.calculated event wiring, seed data with demo declarations + meter readings, 10 new tests (281 total), Phase 4 fully done
 - 2026-03-05: 05-01 complete — BillingModule with BullMQ pipeline, 10-state machine, Bull Board, concurrency enforcement, contract snapshot, 13 new tests (294 total)
+- 2026-03-06: 05-02 complete — SSE progress endpoint, partial tenant cancellation, billing run re-run (full/delta), 11 new tests (305 total)
 
 ## Performance Metrics
 
@@ -142,6 +143,7 @@ Plan 2 of 4 (05-01 done, 05-02 next)
 | 04-03      | 10min    | 2     | 10    |
 | 04-04      | 8min     | 2     | 8     |
 | 05-01      | 5min     | 1     | 14    |
+| 05-02      | 6min     | 2     | 8     |
 
 ## Key Decisions (04-03 additions)
 
@@ -176,10 +178,18 @@ Plan 2 of 4 (05-01 done, 05-02 next)
 - Delta mode scope excludes obligations with non-null invoiceLogId
 - Mailpit added to docker-compose for local SMTP testing in notification plan (05-04)
 
+## Key Decisions (05-02 additions)
+
+- SSE endpoint uses @Public() to bypass JWT since EventSource cannot send Authorization headers
+- 5-minute SSE connection timeout via rxjs timer+takeUntil prevents connection leaks
+- cancelTenants tracks cancelled tenants in filters.cancelledTenants JSON field for audit trail
+- Re-run mode: cancelled/rejected -> full, completed/partial -> delta
+- rerunBillingRun delegates to createBillingRun to reuse concurrency check (R8.7) and queue logic
+
 ## Last Session
 
-- **Timestamp:** 2026-03-05T20:54:00Z
-- **Stopped at:** Completed 05-01-PLAN.md
+- **Timestamp:** 2026-03-06T00:03:00Z
+- **Stopped at:** Completed 05-02-PLAN.md
 
 ## Notes
 
