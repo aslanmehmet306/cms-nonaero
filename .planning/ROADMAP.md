@@ -192,12 +192,13 @@ Plans:
 6. Reports available for revenue by tenant, revenue by service type, billing history, and audit trail with full entity change logs
 7. Stripe handles multi-currency invoicing natively with currency specified per invoice
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md — ExchangeRate Prisma model + CRUD endpoints + rate lookup service + currency conversion helper
+- [ ] 06-02-PLAN.md — Enhanced audit trail with entity timeline drill-down, field-level diffs, obligation trace + contract summary enrichment
+- [ ] 06-03-PLAN.md — ReportsModule with dashboard KPIs, revenue summary (by tenant + service type), aging report (30/60/90), currency conversion display
 
 ### Phase 7: Admin Portal
 
@@ -238,5 +239,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 3. Contract Domain              | 4/4            | Complete    | 2026-03-05 |
 | 4. Obligation & Declaration     | 4/4            | Complete    | 2026-03-05 |
 | 5. Billing & Invoice            | 0/4            | Not started | -          |
-| 6. Multi-Currency & Reporting   | 0/TBD          | Not started | -          |
+| 6. Multi-Currency & Reporting   | 0/3            | Not started | -          |
 | 7. Admin Portal                 | 0/TBD          | Not started | -          |
