@@ -32,6 +32,7 @@ import { SettlementModule } from './settlement/settlement.module';
 import { BillingModule } from './billing/billing.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ExchangeRatesModule } from './exchange-rates/exchange-rates.module';
 
 @Module({
   imports: [
@@ -92,6 +93,8 @@ import { NotificationsModule } from './notifications/notifications.module';
     InvoicesModule,
     // Phase 5: Notifications
     NotificationsModule,
+    // Phase 6: Multi-Currency & Reporting
+    ExchangeRatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
