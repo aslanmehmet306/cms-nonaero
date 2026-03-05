@@ -72,10 +72,10 @@ Plans:
 
 Plans:
 
-- [ ] 02-01-PLAN.md — Formula engine TDD: math.js whitelist sandbox, AST security validation, timeout-protected evaluation, step-band pricing
-- [ ] 02-02-PLAN.md — Airport CRUD + Area hierarchy CRUD with tree queries + ADB seed data extension (3 terminals, 13+ units)
-- [ ] 02-03-PLAN.md — Tenant CRUD with auto-generated sequential codes (TNT-001), Stripe customer creation, and status lifecycle
-- [ ] 02-04-PLAN.md — Service Definition CRUD with versioning + Formula CRUD with dry-run + Billing Policy + seed data (12 formulas, 8 services)
+- [x] 02-01-PLAN.md — Formula engine TDD: math.js whitelist sandbox, AST security validation, timeout-protected evaluation, step-band pricing
+- [x] 02-02-PLAN.md — Airport CRUD + Area hierarchy CRUD with tree queries + ADB seed data extension (3 terminals, 13+ units)
+- [x] 02-03-PLAN.md — Tenant CRUD with auto-generated sequential codes (TNT-001), Stripe customer creation, and status lifecycle
+- [x] 02-04-PLAN.md — Service Definition CRUD with versioning + Formula CRUD with dry-run + Billing Policy + seed data (12 formulas, 8 services)
 
 **Research Flags**:
 
@@ -91,7 +91,7 @@ Plans:
 
 **Success Criteria** (what must be TRUE):
 
-1. User can create contracts in draft state, assign tenant, areas, services, and transition through state machine (draft → in_review → published → active → amended/suspended/terminated)
+1. User can create contracts in draft state, assign tenant, areas, services, and transition through state machine (draft -> in_review -> published -> active -> amended/suspended/terminated)
 2. Publishing a contract automatically generates obligation schedule for all assigned services (triggered by ContractPublished event)
 3. User can amend active contracts with effective date = next full period start only (no mid-month changes)
 4. Amendments create new contract version and archive previous version with full history
@@ -99,12 +99,14 @@ Plans:
 6. Daily cron job transitions published contracts to active when signed_at + effective_from date is reached
 7. Contract snapshot (JSONB) is frozen at billing run start, ensuring deterministic billing regardless of later edits
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md — Contract CRUD + state machine transitions + amendment versioning with pending_amendment status + snapshot helper
+- [ ] 03-02-PLAN.md — Contract-Area assignment + Contract-Service assignment with formula override validation
+- [ ] 03-03-PLAN.md — Obligation schedule generation on contract publish (event-driven) + read-only obligation endpoints + AppModule wiring
+- [ ] 03-04-PLAN.md — Daily cron scheduler (published->active + amendment flip) + tenant suspension cascade + contract seed data
 
 ### Phase 4: Obligation & Declaration
 
@@ -116,7 +118,7 @@ Plans:
 
 **Success Criteria** (what must be TRUE):
 
-1. Obligations transition through 9 states (scheduled → pending_input → pending_calculation → ready → invoiced → settled → skipped → on_hold → cancelled) with state validation
+1. Obligations transition through 9 states (scheduled -> pending_input -> pending_calculation -> ready -> invoiced -> settled -> skipped -> on_hold -> cancelled) with state validation
 2. User can upload revenue declarations via CSV/Excel with 6 validation rules (negative amount, deviation threshold, duplicate period, missing fields, invalid tenant, invalid period)
 3. User can submit meter readings manually, and system calculates consumption (current - previous) and applies rate-based formula
 4. Formula evaluation produces calculated amount with full trace (JSONB: formula + inputs + result) stored in obligation record
@@ -148,7 +150,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
 
 1. User can trigger billing run for single tenant or multiple tenants, and run executes asynchronously via BullMQ queue
-2. Billing run transitions through 10 states (initiated → scoping → calculating → draft_ready → approved → rejected → invoicing → completed → partial → cancelled)
+2. Billing run transitions through 10 states (initiated -> scoping -> calculating -> draft_ready -> approved -> rejected -> invoicing -> completed -> partial -> cancelled)
 3. User can cancel specific tenants from in-progress run without affecting other tenants (partial cancel)
 4. Re-running cancelled billing run performs full rerun; re-running completed run processes delta only (new/changed obligations)
 5. Concurrency rule enforced: max 1 active billing run per airport + period combination
@@ -225,13 +227,13 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase                           | Plans Complete | Status      | Completed |
 | ------------------------------- | -------------- | ----------- | --------- |
 | 1. Foundation & Infrastructure  | 4/4            | Complete    | 2026-03-01 |
-| 2. Master Data & Formula Engine | 4/4 | Complete   | 2026-03-05 |
-| 3. Contract Domain              | 0/TBD          | Not started | -         |
+| 2. Master Data & Formula Engine | 4/4            | Complete    | 2026-03-05 |
+| 3. Contract Domain              | 0/4            | Not started | -         |
 | 4. Obligation & Declaration     | 0/TBD          | Not started | -         |
 | 5. Billing & Invoice            | 0/TBD          | Not started | -         |
 | 6. Multi-Currency & Reporting   | 0/TBD          | Not started | -         |
