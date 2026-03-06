@@ -15,15 +15,13 @@ import { ContractForm } from '@/pages/contracts/ContractForm';
 import { TenantList } from '@/pages/tenants/TenantList';
 import { TenantForm } from '@/pages/tenants/TenantForm';
 
-// Placeholder component for routes not yet built
-function Placeholder({ title }: { title: string }) {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">{title}</h1>
-      <p className="text-muted-foreground">Coming soon</p>
-    </div>
-  );
-}
+// Formula/Service pages (07-02)
+import { FormulaList } from '@/pages/formulas/FormulaList';
+import { FormulaBuilder } from '@/pages/formulas/FormulaBuilder';
+import { ServiceList } from '@/pages/services/ServiceList';
+
+// Billing pages (07-02)
+import { BillingList } from '@/pages/billing/BillingList';
 
 export const router: RouterProviderProps['router'] = createBrowserRouter([
   // Public route — Login page renders OUTSIDE AppShell (no sidebar)
@@ -47,12 +45,14 @@ export const router: RouterProviderProps['router'] = createBrowserRouter([
           { path: 'tenants', element: <TenantList /> },
           { path: 'tenants/new', element: <TenantForm /> },
           { path: 'tenants/:id', element: <TenantForm /> },
-          // Formula/Service/Billing routes — placeholders for 07-02 Task 2
-          { path: 'formulas', element: <Placeholder title="Formulas" /> },
-          { path: 'formulas/new', element: <Placeholder title="New Formula" /> },
-          { path: 'formulas/:id', element: <Placeholder title="Formula Builder" /> },
-          { path: 'services', element: <Placeholder title="Services" /> },
-          { path: 'billing', element: <Placeholder title="Billing" /> },
+          // Formula routes (07-02)
+          { path: 'formulas', element: <FormulaList /> },
+          { path: 'formulas/new', element: <FormulaBuilder /> },
+          { path: 'formulas/:id', element: <FormulaBuilder /> },
+          // Service routes (07-02)
+          { path: 'services', element: <ServiceList /> },
+          // Billing routes (07-02)
+          { path: 'billing', element: <BillingList /> },
           // 07-03 routes
           { path: 'invoices', element: <InvoiceList /> },
           { path: 'settings', element: <Settings /> },
