@@ -3,28 +3,28 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 06-03-PLAN.md — Phase 6 complete
-last_updated: "2026-03-05T22:07:02Z"
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-03-06T06:49:37Z"
 progress:
   total_phases: 7
   completed_phases: 6
-  total_plans: 23
-  completed_plans: 23
+  total_plans: 26
+  completed_plans: 24
 ---
 
 # Project State
 
 ## Current Phase
 
-Phase 6: Multi-Currency & Reporting
+Phase 7: Admin Portal
 
 ## Phase Status
 
-complete
+in-progress
 
 ## Current Plan
 
-Plan 3 of 3 (06-01, 06-02, 06-03 done — Phase 6 complete)
+Plan 1 of 3 (07-01 done)
 
 ## Completed Phases
 
@@ -51,6 +51,7 @@ Plan 3 of 3 (06-01, 06-02, 06-03 done — Phase 6 complete)
 [==========] Phase 4: 4/4 plans complete (04-01, 04-02, 04-03, 04-04 done)
 [==========] Phase 5: 4/4 plans complete (05-01, 05-02, 05-03, 05-04 done)
 [==========] Phase 6: 3/3 plans complete (06-01, 06-02, 06-03 done)
+[===-------] Phase 7: 1/3 plans complete (07-01 done)
 
 ## Key Decisions
 
@@ -140,6 +141,7 @@ Plan 3 of 3 (06-01, 06-02, 06-03 done — Phase 6 complete)
 - 2026-03-06: 06-01 complete — ExchangeRate model + service with Decimal(19,8) FX precision, effective-date rate lookup, 6-endpoint REST controller, 8 new tests (357 total)
 - 2026-03-06: 06-02 complete — Entity timeline drill-down with field-level diffs, Obligation calculationTrace enrichment, 10 new tests
 - 2026-03-06: 06-03 complete — ReportsModule with 5 endpoints (dashboard, revenue-summary, aging, obligations, billing-history), FX conversion, 14 new tests (371 total), Phase 6 fully done
+- 2026-03-06: 07-01 complete — Admin portal foundation: Shadcn/ui + Tailwind v4, Zustand auth store, Axios JWT client, login page, AppShell layout with sidebar + header, 4 shared components (DataTable, StatusBadge, ConfirmDialog, PageHeader), 13 route placeholders
 
 ## Performance Metrics
 
@@ -167,6 +169,7 @@ Plan 3 of 3 (06-01, 06-02, 06-03 done — Phase 6 complete)
 | 06-01      | 5min     | 2     | 9     |
 | 06-02      | 3min     | 2     | 4     |
 | 06-03      | 5min     | 2     | 10    |
+| 07-01      | 6min     | 2     | 46    |
 
 ## Key Decisions (04-03 additions)
 
@@ -225,6 +228,14 @@ Plan 3 of 3 (06-01, 06-02, 06-03 done — Phase 6 complete)
 - GET /exchange-rates/lookup placed before GET /exchange-rates/:id to avoid UUID parse collision
 - Identity rate shortcut for same-currency pairs (no DB round-trip, returns 1.0)
 
+## Key Decisions (07-01 additions)
+
+- Shadcn init aliases fixed from @shared-types to @/ after auto-detection pointed to wrong package
+- RouterProviderProps['router'] explicit type annotation avoids TS2742 cross-package inferred type error
+- TooltipProvider wraps entire app in main.tsx per Shadcn sidebar component requirement
+- Zustand logout uses dynamic import('../main') for queryClient to avoid circular dependency
+- useSSE hooks pass token via query param (not Authorization header) since EventSource cannot send headers
+
 ## Key Decisions (06-03 additions)
 
 - ObligationStatus enum from @prisma/client (not string literals) for type-safe Prisma groupBy status filter
@@ -235,8 +246,8 @@ Plan 3 of 3 (06-01, 06-02, 06-03 done — Phase 6 complete)
 
 ## Last Session
 
-- **Timestamp:** 2026-03-05T22:07:02Z
-- **Stopped at:** Completed 06-03-PLAN.md — Phase 6 complete (3/3 plans)
+- **Timestamp:** 2026-03-06T06:49:37Z
+- **Stopped at:** Completed 07-01-PLAN.md (1/3 plans in Phase 7)
 
 ## Notes
 
