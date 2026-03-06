@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
-import { AreaType } from '@shared-types/enums';
+import { AreaType, UnitClassification } from '@shared-types/enums';
 
 /**
  * DTO for creating a new area in the airport hierarchy.
@@ -31,6 +31,16 @@ export class CreateAreaDto {
   @IsOptional()
   @IsNumber()
   areaM2?: number;
+
+  @ApiPropertyOptional({ example: 3.5, description: 'Height in metres (mainly for units)' })
+  @IsOptional()
+  @IsNumber()
+  heightM?: number;
+
+  @ApiPropertyOptional({ enum: UnitClassification, example: UnitClassification.commercial, description: 'Unit classification (commercial, bank, rent_a_car, etc.)' })
+  @IsOptional()
+  @IsEnum(UnitClassification)
+  unitClassification?: UnitClassification;
 
   @ApiPropertyOptional({ example: true, description: 'Whether the area is leasable to a tenant' })
   @IsOptional()

@@ -22,10 +22,12 @@ const EXPECTED_CHILD_TYPE: Record<AreaType, AreaType> = {
 
 /** Deep-include shape reused by findTree and findRoots. */
 const TREE_INCLUDE = {
+  meters: true,
   children: {
     include: {
+      meters: true,
       children: {
-        include: { children: true },
+        include: { children: true, meters: true },
       },
     },
   },
@@ -65,7 +67,7 @@ export class AreasService {
   async findOne(id: string) {
     const area = await this.prisma.area.findUnique({
       where: { id },
-      include: { parent: true, children: true },
+      include: { parent: true, children: true, meters: true },
     });
 
     if (!area) {

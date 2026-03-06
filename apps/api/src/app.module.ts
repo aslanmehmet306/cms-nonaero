@@ -19,6 +19,7 @@ import { HealthModule } from './health/health.module';
 import { TenantsModule } from './tenants/tenants.module';
 import { AirportsModule } from './airports/airports.module';
 import { AreasModule } from './areas/areas.module';
+import { MetersModule } from './meters/meters.module';
 import { FormulasModule } from './formulas/formulas.module';
 import { ServicesModule } from './services/services.module';
 import { BillingPoliciesModule } from './billing-policies/billing-policies.module';
@@ -76,6 +77,7 @@ import { ReportsModule } from './reports/reports.module';
     TenantsModule,
     AirportsModule,
     AreasModule,
+    MetersModule,
     FormulasModule,
     ServicesModule,
     BillingPoliciesModule,

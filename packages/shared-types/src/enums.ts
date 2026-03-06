@@ -24,6 +24,25 @@ export enum AreaType {
   unit = 'unit',
 }
 
+export enum UnitClassification {
+  commercial = 'commercial',
+  food_beverage = 'food_beverage',
+  bank = 'bank',
+  rent_a_car = 'rent_a_car',
+  office = 'office',
+  storage = 'storage',
+  lounge = 'lounge',
+  duty_free = 'duty_free',
+  other = 'other',
+}
+
+export enum MeterType {
+  electricity = 'electricity',
+  water = 'water',
+  gas = 'gas',
+  heating = 'heating',
+}
+
 export enum ServiceType {
   rent = 'rent',
   revenue_share = 'revenue_share',
