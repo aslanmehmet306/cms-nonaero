@@ -219,13 +219,13 @@ Plans:
 7. Responsive design works on desktop (1920x1080 primary, 1366x768 minimum) with consistent Shadcn/ui theming
 8. Role-based access control enforces separation of duties (contract creator cannot approve own contracts, auditor is read-only)
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
-- [ ] 07-03: TBD
+- [ ] 07-01-PLAN.md — Shadcn/ui + Tailwind v4 install, Zustand auth store, Axios client, login page, AppShell layout with role-aware sidebar, shared components (DataTable, StatusBadge, ConfirmDialog, PageHeader), routing with protected routes
+- [ ] 07-02-PLAN.md — Contract management (list + detail + form with state transitions), Tenant management (list + form with status lifecycle), Formula builder (expression editor + dry-run preview), Service list, Billing operations (trigger + SSE progress + approve/reject)
+- [ ] 07-03-PLAN.md — Invoice list with Stripe URL links, Dashboard with KPI cards + revenue chart + aging report, Settings page (billing policy + user management + airport config), responsive design verification
 
 ## Progress
 
@@ -240,4 +240,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | 4. Obligation & Declaration     | 4/4            | Complete    | 2026-03-05 |
 | 5. Billing & Invoice            | 0/4            | Not started | -          |
 | 6. Multi-Currency & Reporting   | 0/3            | Not started | -          |
-| 7. Admin Portal                 | 0/TBD          | Not started | -          |
+| 7. Admin Portal                 | 0/3            | Not started | -          |
