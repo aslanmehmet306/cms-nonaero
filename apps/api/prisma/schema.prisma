@@ -29,27 +29,43 @@ model Airport {
   contracts       Contract[]
   billingRuns     BillingRun[]
   billingPolicies BillingPolicy[]
+  equipment       Equipment[]
+  tenantGroups    TenantGroup[]
 
   @@map("airport")
 }
 
 model Area {
-  id            String   @id @default(uuid())
-  airportId     String   @map("airport_id")
-  parentAreaId  String?  @map("parent_area_id")
-  code          String                       // DOM-G-R-001
-  name          String
-  areaType      AreaType @map("area_type")   // terminal, floor, zone, unit
-  areaM2        Decimal? @map("area_m2") @db.Decimal(10, 2)
-  isLeasable    Boolean  @default(false) @map("is_leasable")
-  isActive      Boolean  @default(true) @map("is_active")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id                String         @id @default(uuid())
+  airportId         String         @map("airport_id")
+  parentAreaId      String?        @map("parent_area_id")
+  code              String                       // DOM-G-R-001
+  name              String
+  areaType          AreaType       @map("area_type")   // terminal, floor, zone, unit
+  areaM2            Decimal?       @map("area_m2") @db.Decimal(10, 2)
+  isLeasable        Boolean        @default(false) @map("is_leasable")
+  isActive          Boolean        @default(true) @map("is_active")
+  // === v2: Area Enhancements ===
+  areaCategory      AreaCategory?  @map("area_category")
+  usageType         AreaUsageType? @map("usage_type")
+  maxOccupants      Int?           @map("max_occupants")
+  isShared          Boolean        @default(false) @map("is_shared")
+  baseRatePerM2     Decimal?       @map("base_rate_per_m2") @db.Decimal(10, 2)
+  premiumMultiplier Decimal?       @default(1.0) @map("premium_multiplier") @db.Decimal(5, 2)
+  availableFrom     DateTime?      @map("available_from") @db.Date
+  availableUntil    DateTime?      @map("available_until") @db.Date
+  floorPlanUrl      String?        @map("floor_plan_url")
+  // === end v2 ===
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
 
-  airport       Airport  @relation(fields: [airportId], references: [id])
-  parent        Area?    @relation("AreaHierarchy", fields: [parentAreaId], references: [id])
-  children      Area[]   @relation("AreaHierarchy")
+  airport       Airport          @relation(fields: [airportId], references: [id])
+  parent        Area?            @relation("AreaHierarchy", fields: [parentAreaId], references: [id])
+  children      Area[]           @relation("AreaHierarchy")
   contractAreas ContractArea[]
+  equipment     Equipment[]
+  occupancies   AreaOccupancy[]
+  allocations   AreaAllocation[]
 
   @@unique([airportId, code])
   @@index([parentAreaId])
@@ -63,30 +79,72 @@ enum AreaType {
   unit
 }
 
+enum AreaCategory {
+  commercial
+  operational
+  common
+  technical
+}
+
+enum AreaUsageType {
+  retail
+  food_and_beverage
+  duty_free
+  lounge
+  advertising
+  office
+  storage
+  parking
+  car_rental
+  bank_atm
+  other
+}
+
 // ============================================
 // TENANT
 // ============================================
 
 model Tenant {
-  id                String       @id @default(uuid())
-  airportId         String       @map("airport_id")
-  code              String                    // TNT-001
-  name              String
-  taxId             String?      @map("tax_id")
-  email             String?
-  phone             String?
-  address           String?
-  stripeCustomerId  String?      @map("stripe_customer_id")
-  status            TenantStatus @default(active)
-  createdAt         DateTime     @default(now()) @map("created_at")
-  updatedAt         DateTime     @updatedAt @map("updated_at")
+  id                    String                @id @default(uuid())
+  airportId             String                @map("airport_id")
+  code                  String                                  // TNT-001
+  name                  String
+  taxId                 String?               @map("tax_id")
+  email                 String?
+  phone                 String?
+  address               String?
+  stripeCustomerId      String?               @map("stripe_customer_id")
+  status                TenantStatus          @default(active)
+  // === v2: Tenant Enhancements ===
+  tenantGroupId         String?               @map("tenant_group_id")
+  classification        TenantClassification? @map("classification")
+  businessType          String?               @map("business_type")
+  brandName             String?               @map("brand_name")
+  legalEntityType       LegalEntityType?      @map("legal_entity_type")
+  registrationNumber    String?               @map("registration_number")
+  annualRevenueEstimate Decimal?              @map("annual_revenue_estimate") @db.Decimal(15, 2)
+  employeeCount         Int?                  @map("employee_count")
+  contactPerson         String?               @map("contact_person")
+  website               String?
+  onboardingStatus      OnboardingStatus?     @map("onboarding_status")
+  onboardingCompletedAt DateTime?             @map("onboarding_completed_at")
+  insurancePolicyNumber String?               @map("insurance_policy_number")
+  insuranceExpiry       DateTime?             @map("insurance_expiry") @db.Date
+  // === end v2 ===
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
 
-  airport           Airport      @relation(fields: [airportId], references: [id])
+  airport           Airport               @relation(fields: [airportId], references: [id])
+  tenantGroup       TenantGroup?          @relation(fields: [tenantGroupId], references: [id])
   contracts         Contract[]
   declarations      Declaration[]
   obligations       Obligation[]
   invoiceLogs       InvoiceLog[]
   notifications     Notification[]
+  scores            TenantScore[]
+  creditNotes       CreditNote[]
+  areaOccupancies   AreaOccupancy[]
+  allocationShares  AreaAllocationShare[]
 
   @@unique([airportId, code])
   @@map("tenant")
@@ -96,6 +154,92 @@ enum TenantStatus {
   active
   suspended
   deactivated
+  onboarding
+}
+
+enum TenantClassification {
+  anchor
+  standard
+  startup
+  temporary
+  franchise
+}
+
+enum LegalEntityType {
+  corporation
+  limited_company
+  sole_proprietor
+  partnership
+  cooperative
+  branch_office
+}
+
+enum OnboardingStatus {
+  pending_documents
+  documents_received
+  under_review
+  approved
+  completed
+}
+
+// ============================================
+// TENANT GROUP (Parent-Subsidiary)
+// ============================================
+
+model TenantGroup {
+  id            String       @id @default(uuid())
+  airportId     String       @map("airport_id")
+  code          String                        // GRP-001
+  name          String
+  parentGroupId String?      @map("parent_group_id")
+  taxId         String?      @map("tax_id")
+  contactEmail  String?      @map("contact_email")
+  isActive      Boolean      @default(true) @map("is_active")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  airport       Airport      @relation(fields: [airportId], references: [id])
+  parentGroup   TenantGroup? @relation("TenantGroupHierarchy", fields: [parentGroupId], references: [id])
+  childGroups   TenantGroup[] @relation("TenantGroupHierarchy")
+  tenants       Tenant[]
+
+  @@unique([airportId, code])
+  @@map("tenant_group")
+}
+
+// ============================================
+// TENANT SCORE (Risk & Performance)
+// ============================================
+
+model TenantScore {
+  id                     String       @id @default(uuid())
+  tenantId               String       @map("tenant_id")
+  scorePeriod            DateTime     @map("score_period") @db.Date
+  paymentScore           Int          @map("payment_score")
+  declarationScore       Int          @map("declaration_score")
+  complianceScore        Int          @map("compliance_score")
+  revenuePerformance     Int          @map("revenue_performance")
+  overallScore           Int          @map("overall_score")
+  riskCategory           RiskCategory @map("risk_category")
+  latePaymentCount       Int          @default(0) @map("late_payment_count")
+  missedDeclarationCount Int          @default(0) @map("missed_declaration_count")
+  totalRevenueDeclared   Decimal?     @map("total_revenue_declared") @db.Decimal(15, 2)
+  calculatedAt           DateTime     @default(now()) @map("calculated_at")
+  createdAt              DateTime     @default(now()) @map("created_at")
+
+  tenant                 Tenant       @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, scorePeriod])
+  @@index([tenantId])
+  @@index([riskCategory])
+  @@map("tenant_score")
+}
+
+enum RiskCategory {
+  low
+  medium
+  high
+  critical
 }
 
 // ============================================
@@ -117,6 +261,13 @@ model ServiceDefinition {
   effectiveFrom         DateTime            @map("effective_from") @db.Date
   effectiveTo           DateTime?           @map("effective_to") @db.Date
   publishedAt           DateTime?           @map("published_at")
+  // === v2: Service Enhancements ===
+  requiresEquipment     Boolean             @default(false) @map("requires_equipment")
+  requiresDeclaration   Boolean             @default(false) @map("requires_declaration")
+  requiresMeterReading  Boolean             @default(false) @map("requires_meter_reading")
+  slaDescription        String?             @map("sla_description")
+  slaResponseHours      Int?                @map("sla_response_hours")
+  // === end v2 ===
   createdAt             DateTime            @default(now()) @map("created_at")
 
   formula               Formula             @relation(fields: [formulaId], references: [id])
@@ -130,6 +281,8 @@ enum ServiceType {
   revenue_share
   service_charge
   utility
+  equipment_rental
+  allocation_charge
 }
 
 enum ServiceStatus {
@@ -170,6 +323,8 @@ enum FormulaType {
   revenue_share
   escalation
   proration
+  metered
+  allocation
 }
 
 enum FormulaStatus {
@@ -179,42 +334,359 @@ enum FormulaStatus {
 }
 
 // ============================================
+// EQUIPMENT & ASSET ENGINE
+// ============================================
+
+model Equipment {
+  id                      String              @id @default(uuid())
+  airportId               String              @map("airport_id")
+  areaId                  String?             @map("area_id")
+  code                    String                                    // EQP-POS-001
+  name                    String
+  equipmentType           EquipmentType       @map("equipment_type")
+  category                EquipmentCategory
+  manufacturer            String?
+  modelName               String?             @map("model_name")
+  serialNumber            String?             @map("serial_number")
+  status                  EquipmentStatus     @default(registered)
+  ownership               EquipmentOwnership  @default(airport)
+  // Financial tracking
+  acquisitionDate         DateTime?           @map("acquisition_date") @db.Date
+  acquisitionCost         Decimal?            @map("acquisition_cost") @db.Decimal(15, 2)
+  depreciationMethod      DepreciationMethod? @map("depreciation_method")
+  usefulLifeMonths        Int?                @map("useful_life_months")
+  residualValue           Decimal?            @map("residual_value") @db.Decimal(15, 2)
+  currentBookValue        Decimal?            @map("current_book_value") @db.Decimal(15, 2)
+  // Rental pricing
+  monthlyRentalRate       Decimal?            @map("monthly_rental_rate") @db.Decimal(15, 2)
+  rentalCurrency          String?             @default("TRY") @map("rental_currency")
+  // Insurance & warranty
+  warrantyExpiry          DateTime?           @map("warranty_expiry") @db.Date
+  insurancePolicy         String?             @map("insurance_policy")
+  insuranceExpiry         DateTime?           @map("insurance_expiry") @db.Date
+  // Metering capability
+  isMetered               Boolean             @default(false) @map("is_metered")
+  meterUnit               String?             @map("meter_unit")
+  lastMeterReading        Decimal?            @map("last_meter_reading") @db.Decimal(15, 4)
+  lastMeterReadAt         DateTime?           @map("last_meter_read_at")
+  // Maintenance
+  nextMaintenanceAt       DateTime?           @map("next_maintenance_at") @db.Date
+  maintenanceIntervalDays Int?                @map("maintenance_interval_days")
+  // Sustainability
+  energyRating            String?             @map("energy_rating")
+  annualEnergyKwh         Decimal?            @map("annual_energy_kwh") @db.Decimal(12, 2)
+  commissionedAt          DateTime?           @map("commissioned_at")
+  decommissionedAt        DateTime?           @map("decommissioned_at")
+  notes                   String?
+  createdAt               DateTime            @default(now()) @map("created_at")
+  updatedAt               DateTime            @updatedAt @map("updated_at")
+
+  airport            Airport                  @relation(fields: [airportId], references: [id])
+  area               Area?                    @relation(fields: [areaId], references: [id])
+  meterReadings      EquipmentMeterReading[]
+  contractEquipments ContractEquipment[]
+  maintenanceLogs    EquipmentMaintenanceLog[]
+  obligations        Obligation[]
+
+  @@unique([airportId, code])
+  @@index([areaId])
+  @@index([equipmentType])
+  @@index([status])
+  @@map("equipment")
+}
+
+enum EquipmentType {
+  pos_terminal
+  digital_signage
+  kiosk
+  utility_meter
+  hvac_unit
+  security_camera
+  wifi_access_point
+  vending_machine
+  furniture_set
+  kitchen_equipment
+  other
+}
+
+enum EquipmentCategory {
+  it_infrastructure
+  commercial_fixture
+  utility_infrastructure
+  security
+  furniture
+  kitchen
+  signage
+  other_category
+}
+
+enum EquipmentStatus {
+  registered
+  in_storage
+  commissioned
+  under_maintenance
+  decommissioned
+  disposed
+}
+
+enum EquipmentOwnership {
+  airport
+  tenant_owned
+  third_party
+}
+
+enum DepreciationMethod {
+  straight_line
+  declining_balance
+  no_depreciation
+}
+
+// ============================================
+// EQUIPMENT METER READING
+// ============================================
+
+model EquipmentMeterReading {
+  id            String             @id @default(uuid())
+  equipmentId   String             @map("equipment_id")
+  readingDate   DateTime           @map("reading_date") @db.Date
+  readingValue  Decimal            @map("reading_value") @db.Decimal(15, 4)
+  previousValue Decimal?           @map("previous_value") @db.Decimal(15, 4)
+  consumption   Decimal?           @db.Decimal(15, 4)
+  unit          String
+  readingType   MeterReadingType   @map("reading_type")
+  source        MeterReadingSource @default(manual)
+  isValidated   Boolean            @default(false) @map("is_validated")
+  validatedBy   String?            @map("validated_by")
+  validatedAt   DateTime?          @map("validated_at")
+  photoUrl      String?            @map("photo_url")
+  notes         String?
+  createdAt     DateTime           @default(now()) @map("created_at")
+
+  equipment     Equipment          @relation(fields: [equipmentId], references: [id])
+
+  @@index([equipmentId, readingDate])
+  @@map("equipment_meter_reading")
+}
+
+enum MeterReadingType {
+  periodic
+  opening
+  closing
+  audit
+}
+
+enum MeterReadingSource {
+  manual
+  iot
+  tenant_declared
+}
+
+// ============================================
+// EQUIPMENT MAINTENANCE LOG
+// ============================================
+
+model EquipmentMaintenanceLog {
+  id              String          @id @default(uuid())
+  equipmentId     String          @map("equipment_id")
+  maintenanceType MaintenanceType @map("maintenance_type")
+  description     String
+  performedBy     String          @map("performed_by")
+  performedAt     DateTime        @map("performed_at")
+  cost            Decimal?        @db.Decimal(15, 2)
+  currency        String          @default("TRY")
+  nextScheduledAt DateTime?       @map("next_scheduled_at") @db.Date
+  notes           String?
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  equipment       Equipment       @relation(fields: [equipmentId], references: [id])
+
+  @@index([equipmentId])
+  @@map("equipment_maintenance_log")
+}
+
+enum MaintenanceType {
+  preventive
+  corrective
+  inspection
+  calibration
+}
+
+// ============================================
+// CONTRACT EQUIPMENT (Junction)
+// ============================================
+
+model ContractEquipment {
+  id            String    @id @default(uuid())
+  contractId    String    @map("contract_id")
+  equipmentId   String    @map("equipment_id")
+  effectiveFrom DateTime  @map("effective_from") @db.Date
+  effectiveTo   DateTime? @map("effective_to") @db.Date
+  monthlyRate   Decimal?  @map("monthly_rate") @db.Decimal(15, 2)
+  rateCurrency  String    @default("TRY") @map("rate_currency")
+  includeInBundle Boolean @default(false) @map("include_in_bundle")
+  isActive      Boolean   @default(true) @map("is_active")
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  contract      Contract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  equipment     Equipment @relation(fields: [equipmentId], references: [id])
+
+  @@unique([contractId, equipmentId])
+  @@index([equipmentId])
+  @@map("contract_equipment")
+}
+
+// ============================================
+// AREA OCCUPANCY (Temporal Tracking)
+// ============================================
+
+model AreaOccupancy {
+  id            String          @id @default(uuid())
+  areaId        String          @map("area_id")
+  tenantId      String?         @map("tenant_id")
+  contractId    String?         @map("contract_id")
+  occupancyType OccupancyType   @map("occupancy_type")
+  status        OccupancyStatus @default(planned)
+  occupiedFrom  DateTime        @map("occupied_from") @db.Date
+  occupiedTo    DateTime?       @map("occupied_to") @db.Date
+  occupiedM2    Decimal?        @map("occupied_m2") @db.Decimal(10, 2)
+  notes         String?
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  area          Area            @relation(fields: [areaId], references: [id])
+  tenant        Tenant?         @relation(fields: [tenantId], references: [id])
+  contract      Contract?       @relation(fields: [contractId], references: [id])
+
+  @@index([areaId, occupiedFrom])
+  @@index([tenantId])
+  @@map("area_occupancy")
+}
+
+enum OccupancyType {
+  exclusive
+  shared
+  temporary
+  storage_use
+}
+
+enum OccupancyStatus {
+  planned
+  occupied
+  vacated
+  under_renovation
+}
+
+// ============================================
+// AREA ALLOCATION (Shared Cost Splitting)
+// ============================================
+
+model AreaAllocation {
+  id               String           @id @default(uuid())
+  airportId        String           @map("airport_id")
+  areaId           String           @map("area_id")
+  allocationMethod AllocationMethod @map("allocation_method")
+  periodStart      DateTime         @map("period_start") @db.Date
+  periodEnd        DateTime?        @map("period_end") @db.Date
+  totalCost        Decimal?         @map("total_cost") @db.Decimal(15, 2)
+  currency         String           @default("TRY")
+  status           AllocationStatus @default(draft)
+  approvedBy       String?          @map("approved_by")
+  approvedAt       DateTime?        @map("approved_at")
+  version          Int              @default(1)
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  area             Area             @relation(fields: [areaId], references: [id])
+  shares           AreaAllocationShare[]
+  obligations      Obligation[]
+
+  @@index([areaId])
+  @@map("area_allocation")
+}
+
+model AreaAllocationShare {
+  id               String         @id @default(uuid())
+  allocationId     String         @map("allocation_id")
+  tenantId         String         @map("tenant_id")
+  contractId       String?        @map("contract_id")
+  shareRatio       Decimal        @map("share_ratio") @db.Decimal(10, 8)
+  fixedAmount      Decimal?       @map("fixed_amount") @db.Decimal(15, 2)
+  calculatedAmount Decimal?       @map("calculated_amount") @db.Decimal(15, 2)
+  createdAt        DateTime       @default(now()) @map("created_at")
+
+  allocation       AreaAllocation @relation(fields: [allocationId], references: [id], onDelete: Cascade)
+  tenant           Tenant         @relation(fields: [tenantId], references: [id])
+
+  @@unique([allocationId, tenantId])
+  @@map("area_allocation_share")
+}
+
+enum AllocationMethod {
+  proportional_m2
+  equal_split
+  revenue_weighted
+  fixed_amount
+  passenger_weighted
+}
+
+enum AllocationStatus {
+  draft
+  approved_alloc
+  active_alloc
+  archived_alloc
+}
+
+// ============================================
 // CONTRACT (Commercial Digital Twin)
 // ============================================
 
 model Contract {
-  id                  String          @id @default(uuid())
-  airportId           String          @map("airport_id")
-  tenantId            String          @map("tenant_id")
-  contractNumber      String          @map("contract_number")
-  version             Int             @default(1)
-  previousVersionId   String?         @map("previous_version_id")
-  status              ContractStatus  @default(draft)
-  effectiveFrom       DateTime        @map("effective_from") @db.Date
-  effectiveTo         DateTime        @map("effective_to") @db.Date
-  annualMag           Decimal?        @map("annual_mag") @db.Decimal(15, 2)
-  magCurrency         String?         @default("TRY") @map("mag_currency")
-  billingFrequency    BillingFrequency @default(monthly) @map("billing_frequency")
-  responsibleOwner    String?         @map("responsible_owner")
-  escalationRule      Json?           @map("escalation_rule")
-  depositAmount       Decimal?        @map("deposit_amount") @db.Decimal(15, 2)
-  guaranteeType       GuaranteeType?  @map("guarantee_type")
-  guaranteeExpiry     DateTime?       @map("guarantee_expiry") @db.Date
-  signedAt            DateTime?       @map("signed_at")
-  publishedAt         DateTime?       @map("published_at")
-  terminatedAt        DateTime?       @map("terminated_at")
-  terminationReason   String?         @map("termination_reason")
-  createdAt           DateTime        @default(now()) @map("created_at")
-  updatedAt           DateTime        @updatedAt @map("updated_at")
+  id                     String            @id @default(uuid())
+  airportId              String            @map("airport_id")
+  tenantId               String            @map("tenant_id")
+  contractNumber         String            @map("contract_number")
+  version                Int               @default(1)
+  previousVersionId      String?           @map("previous_version_id")
+  status                 ContractStatus    @default(draft)
+  effectiveFrom          DateTime          @map("effective_from") @db.Date
+  effectiveTo            DateTime          @map("effective_to") @db.Date
+  annualMag              Decimal?          @map("annual_mag") @db.Decimal(15, 2)
+  magCurrency            String?           @default("TRY") @map("mag_currency")
+  billingFrequency       BillingFrequency  @default(monthly) @map("billing_frequency")
+  responsibleOwner       String?           @map("responsible_owner")
+  escalationRule         Json?             @map("escalation_rule")
+  depositAmount          Decimal?          @map("deposit_amount") @db.Decimal(15, 2)
+  guaranteeType          GuaranteeType?    @map("guarantee_type")
+  guaranteeExpiry        DateTime?         @map("guarantee_expiry") @db.Date
+  signedAt               DateTime?         @map("signed_at")
+  publishedAt            DateTime?         @map("published_at")
+  terminatedAt           DateTime?         @map("terminated_at")
+  terminationReason      String?           @map("termination_reason")
+  // === v2: Contract Enhancements ===
+  contractType           ContractType      @default(standard) @map("contract_type")
+  performanceTarget      Decimal?          @map("performance_target") @db.Decimal(15, 2)
+  performanceMetric      PerformanceMetric? @map("performance_metric")
+  performancePenaltyRate Decimal?          @map("performance_penalty_rate") @db.Decimal(5, 4)
+  performanceBonusRate   Decimal?          @map("performance_bonus_rate") @db.Decimal(5, 4)
+  insuranceRequired      Boolean           @default(false) @map("insurance_required")
+  renewalOption          RenewalOption?    @map("renewal_option")
+  renewalNoticeDays      Int?              @map("renewal_notice_days")
+  // === end v2 ===
+  createdAt              DateTime          @default(now()) @map("created_at")
+  updatedAt              DateTime          @updatedAt @map("updated_at")
 
-  airport             Airport         @relation(fields: [airportId], references: [id])
-  tenant              Tenant          @relation(fields: [tenantId], references: [id])
-  previousVersion     Contract?       @relation("ContractVersions", fields: [previousVersionId], references: [id])
-  nextVersions        Contract[]      @relation("ContractVersions")
+  airport             Airport            @relation(fields: [airportId], references: [id])
+  tenant              Tenant             @relation(fields: [tenantId], references: [id])
+  previousVersion     Contract?          @relation("ContractVersions", fields: [previousVersionId], references: [id])
+  nextVersions        Contract[]         @relation("ContractVersions")
   contractAreas       ContractArea[]
   contractServices    ContractService[]
+  contractEquipments  ContractEquipment[]
   obligations         Obligation[]
   settlementEntries   SettlementEntry[]
+  areaOccupancies     AreaOccupancy[]
+  creditNotes         CreditNote[]
 
   @@unique([airportId, contractNumber, version])
   @@index([tenantId])
@@ -231,6 +703,28 @@ enum ContractStatus {
   amended
   suspended
   terminated
+}
+
+enum ContractType {
+  standard
+  concession
+  license
+  management
+  temporary
+}
+
+enum PerformanceMetric {
+  revenue
+  pax_spend
+  sales_per_m2
+  footfall
+}
+
+enum RenewalOption {
+  no_renewal
+  auto_renew
+  option_to_renew
+  mutual_agreement
 }
 
 enum GuaranteeType {
@@ -273,6 +767,59 @@ model ContractService {
 }
 
 // ============================================
+// CREDIT NOTE (Adjustment/Credit Workflow)
+// ============================================
+
+model CreditNote {
+  id                  String           @id @default(uuid())
+  airportId           String           @map("airport_id")
+  tenantId            String           @map("tenant_id")
+  contractId          String           @map("contract_id")
+  creditNoteNumber    String           @map("credit_note_number")
+  reason              CreditNoteReason
+  status              CreditNoteStatus @default(draft)
+  amount              Decimal          @db.Decimal(15, 2)
+  currency            String           @default("TRY")
+  description         String
+  relatedObligationId String?          @map("related_obligation_id")
+  relatedInvoiceLogId String?          @map("related_invoice_log_id")
+  approvedBy          String?          @map("approved_by")
+  approvedAt          DateTime?        @map("approved_at")
+  issuedAt            DateTime?        @map("issued_at")
+  voidedAt            DateTime?        @map("voided_at")
+  stripeRefundId      String?          @map("stripe_refund_id")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  tenant              Tenant           @relation(fields: [tenantId], references: [id])
+  contract            Contract         @relation(fields: [contractId], references: [id])
+
+  @@unique([airportId, creditNoteNumber])
+  @@index([tenantId])
+  @@index([contractId])
+  @@map("credit_note")
+}
+
+enum CreditNoteReason {
+  billing_error
+  service_interruption
+  area_unavailability
+  equipment_downtime
+  goodwill
+  contract_amendment
+  dispute_resolution
+  other_reason
+}
+
+enum CreditNoteStatus {
+  draft
+  pending_approval
+  approved_cn
+  issued
+  voided
+}
+
+// ============================================
 // OBLIGATION (Auto-generated on contract publish)
 // ============================================
 
@@ -302,6 +849,11 @@ model Obligation {
   taxRate               Decimal?          @map("tax_rate") @db.Decimal(5, 2)
   disputeStatus         DisputeStatus?    @map("dispute_status")
   lineHash              String?           @map("line_hash")
+  // === v2: Obligation Enhancements ===
+  equipmentId           String?           @map("equipment_id")
+  allocationId          String?           @map("allocation_id")
+  creditNoteAdjustment  Decimal?          @map("credit_note_adjustment") @db.Decimal(15, 2)
+  // === end v2 ===
   createdAt             DateTime          @default(now()) @map("created_at")
   invoicedAt            DateTime?         @map("invoiced_at")
   settledAt             DateTime?         @map("settled_at")
@@ -315,6 +867,8 @@ model Obligation {
   childObligations      Obligation[]      @relation("ObligationAdjustment")
   billingRun            BillingRun?       @relation(fields: [billingRunId], references: [id])
   invoiceLog            InvoiceLog?       @relation(fields: [invoiceLogId], references: [id])
+  equipment             Equipment?        @relation(fields: [equipmentId], references: [id])
+  areaAllocation        AreaAllocation?   @relation(fields: [allocationId], references: [id])
 
   @@unique([lineHash])
   @@index([contractId])
@@ -323,6 +877,8 @@ model Obligation {
   @@index([periodStart, periodEnd])
   @@index([chargeType])
   @@index([dueDate])
+  @@index([equipmentId])
+  @@index([allocationId])
   @@map("obligation")
 }
 
@@ -331,6 +887,8 @@ enum ObligationType {
   revenue_share
   mag_shortfall
   mag_true_up
+  equipment
+  allocation
 }
 
 enum ChargeType {
@@ -339,6 +897,8 @@ enum ChargeType {
   service_charge
   utility
   mag_settlement
+  equipment_rental
+  allocation_charge
 }
 
 enum ObligationStatus {
@@ -644,6 +1204,10 @@ enum NotificationType {
   billing_run_completed
   contract_expiring
   mag_shortfall
+  equipment_maintenance_due
+  tenant_risk_category_changed
+  insurance_expiring
+  credit_note_issued
 }
 
 enum NotificationChannel {
@@ -726,7 +1290,7 @@ model AuditLog {
 }
 
 // ============================================
-// EXCHANGE RATE (Phase 6: Multi-Currency)
+// EXCHANGE RATE (Multi-Currency)
 // ============================================
 
 model ExchangeRate {

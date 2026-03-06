@@ -1062,6 +1062,417 @@ async function main() {
     console.log('Phase 5 seed: Notifications already exist, skipping');
   }
 
+  // =========================================================================
+  // V2: Enterprise Entity Seed Data
+  // =========================================================================
+
+  // 11. TenantGroup — 1 parent group (GRP-001) with TNT-001 + TNT-002
+  const existingGroup = await prisma.tenantGroup.findFirst({
+    where: { airportId: airport.id, code: 'GRP-001' },
+  });
+
+  let tenantGroupId: string;
+  if (!existingGroup) {
+    const group = await prisma.tenantGroup.create({
+      data: {
+        airportId: airport.id,
+        code: 'GRP-001',
+        name: 'Retail Holdings Group',
+        taxId: 'TR-9876543210',
+        contactEmail: 'group@retailholdings.com',
+        isActive: true,
+      },
+    });
+    tenantGroupId = group.id;
+
+    // Link TNT-001 and TNT-002 to the group
+    await prisma.tenant.update({
+      where: { id: createdTenants['TNT-001'] },
+      data: { tenantGroupId: group.id },
+    });
+    await prisma.tenant.update({
+      where: { id: createdTenants['TNT-002'] },
+      data: { tenantGroupId: group.id },
+    });
+    console.log('V2 seed: TenantGroup GRP-001 created, TNT-001 + TNT-002 linked');
+  } else {
+    tenantGroupId = existingGroup.id;
+    console.log('V2 seed: TenantGroup already exists, skipping');
+  }
+
+  // 12. Equipment — 5 items (2 POS, 1 utility meter, 1 digital signage, 1 kiosk)
+  const existingEquipment = await prisma.equipment.findFirst({
+    where: { airportId: airport.id, code: 'EQP-001' },
+  });
+
+  const equipmentIds: Record<string, string> = {};
+  if (!existingEquipment) {
+    const equipmentDefs = [
+      {
+        code: 'EQP-001',
+        name: 'POS Terminal A1',
+        equipmentType: 'pos_terminal' as const,
+        category: 'it_infrastructure' as const,
+        manufacturer: 'Ingenico',
+        modelName: 'Move 5000',
+        serialNumber: 'ING-5000-001',
+        status: 'commissioned' as const,
+        ownership: 'airport' as const,
+        monthlyRentalRate: 850,
+        isMetered: false,
+        commissionedAt: new Date('2025-06-01'),
+      },
+      {
+        code: 'EQP-002',
+        name: 'POS Terminal A2',
+        equipmentType: 'pos_terminal' as const,
+        category: 'it_infrastructure' as const,
+        manufacturer: 'Ingenico',
+        modelName: 'Move 5000',
+        serialNumber: 'ING-5000-002',
+        status: 'commissioned' as const,
+        ownership: 'airport' as const,
+        monthlyRentalRate: 850,
+        isMetered: false,
+        commissionedAt: new Date('2025-06-01'),
+      },
+      {
+        code: 'EQP-003',
+        name: 'Electricity Meter - Duty Free Main',
+        equipmentType: 'utility_meter' as const,
+        category: 'utility_infrastructure' as const,
+        manufacturer: 'Schneider Electric',
+        modelName: 'PM5560',
+        serialNumber: 'SE-PM5560-001',
+        status: 'commissioned' as const,
+        ownership: 'airport' as const,
+        isMetered: true,
+        meterUnit: 'kWh',
+        lastMeterReading: 17800,
+        commissionedAt: new Date('2025-01-15'),
+        maintenanceIntervalDays: 180,
+        nextMaintenanceAt: new Date('2026-07-15'),
+      },
+      {
+        code: 'EQP-004',
+        name: 'Digital Signage - Gate A1',
+        equipmentType: 'digital_signage' as const,
+        category: 'signage' as const,
+        manufacturer: 'Samsung',
+        modelName: 'QB75B',
+        serialNumber: 'SAM-QB75B-001',
+        status: 'commissioned' as const,
+        ownership: 'airport' as const,
+        monthlyRentalRate: 1200,
+        isMetered: false,
+        commissionedAt: new Date('2025-09-01'),
+      },
+      {
+        code: 'EQP-005',
+        name: 'Self-Service Kiosk B1',
+        equipmentType: 'kiosk' as const,
+        category: 'commercial_fixture' as const,
+        manufacturer: 'Elo Touch',
+        modelName: 'EloView 22I',
+        serialNumber: 'ELO-22I-001',
+        status: 'registered' as const,
+        ownership: 'airport' as const,
+        monthlyRentalRate: 650,
+        isMetered: false,
+      },
+    ];
+
+    for (const eq of equipmentDefs) {
+      const areaForEquipment = eq.code === 'EQP-003' ? dutyfreeMainArea : null;
+      const eqRecord = await prisma.equipment.create({
+        data: {
+          airportId: airport.id,
+          areaId: areaForEquipment?.id ?? null,
+          code: eq.code,
+          name: eq.name,
+          equipmentType: eq.equipmentType,
+          category: eq.category,
+          manufacturer: eq.manufacturer,
+          modelName: eq.modelName,
+          serialNumber: eq.serialNumber,
+          status: eq.status,
+          ownership: eq.ownership,
+          monthlyRentalRate: eq.monthlyRentalRate ?? null,
+          isMetered: eq.isMetered,
+          meterUnit: eq.isMetered ? eq.meterUnit : null,
+          lastMeterReading: (eq as any).lastMeterReading ?? null,
+          commissionedAt: (eq as any).commissionedAt ?? null,
+          maintenanceIntervalDays: (eq as any).maintenanceIntervalDays ?? null,
+          nextMaintenanceAt: (eq as any).nextMaintenanceAt ?? null,
+        },
+      });
+      equipmentIds[eq.code] = eqRecord.id;
+    }
+    console.log(`V2 seed: ${equipmentDefs.length} equipment records created`);
+  } else {
+    console.log('V2 seed: Equipment already exists, skipping');
+  }
+
+  // 13. EquipmentMeterReading — 2 readings for utility meter (EQP-003)
+  if (equipmentIds['EQP-003']) {
+    const existingReading = await prisma.equipmentMeterReading.findFirst({
+      where: { equipmentId: equipmentIds['EQP-003'] },
+    });
+
+    if (!existingReading) {
+      await prisma.equipmentMeterReading.create({
+        data: {
+          equipmentId: equipmentIds['EQP-003'],
+          readingDate: new Date('2026-01-31'),
+          readingValue: 15000,
+          previousValue: 12500,
+          consumption: 2500,
+          unit: 'kWh',
+          readingType: 'periodic',
+          source: 'manual',
+          isValidated: true,
+          validatedBy: 'seed-admin',
+          validatedAt: new Date('2026-02-02'),
+        },
+      });
+      await prisma.equipmentMeterReading.create({
+        data: {
+          equipmentId: equipmentIds['EQP-003'],
+          readingDate: new Date('2026-02-28'),
+          readingValue: 17800,
+          previousValue: 15000,
+          consumption: 2800,
+          unit: 'kWh',
+          readingType: 'periodic',
+          source: 'manual',
+          isValidated: true,
+          validatedBy: 'seed-admin',
+          validatedAt: new Date('2026-03-02'),
+        },
+      });
+      console.log('V2 seed: 2 meter readings created for EQP-003');
+    }
+  }
+
+  // 14. EquipmentMaintenanceLog — 1 maintenance record for EQP-003
+  if (equipmentIds['EQP-003']) {
+    const existingLog = await prisma.equipmentMaintenanceLog.findFirst({
+      where: { equipmentId: equipmentIds['EQP-003'] },
+    });
+
+    if (!existingLog) {
+      await prisma.equipmentMaintenanceLog.create({
+        data: {
+          equipmentId: equipmentIds['EQP-003'],
+          maintenanceType: 'calibration',
+          description: 'Annual calibration of utility meter',
+          performedBy: 'Schneider Electric Field Service',
+          performedAt: new Date('2026-01-15'),
+          cost: 2500,
+          currency: 'TRY',
+          nextScheduledAt: new Date('2027-01-15'),
+        },
+      });
+      console.log('V2 seed: 1 maintenance log created for EQP-003');
+    }
+  }
+
+  // 15. ContractEquipment — 2 POS terminals assigned to CNT-001
+  if (cnt001Ref && equipmentIds['EQP-001'] && equipmentIds['EQP-002']) {
+    const existingCE = await prisma.contractEquipment.findFirst({
+      where: { contractId: cnt001Ref.id },
+    });
+
+    if (!existingCE) {
+      await prisma.contractEquipment.create({
+        data: {
+          contractId: cnt001Ref.id,
+          equipmentId: equipmentIds['EQP-001'],
+          effectiveFrom: new Date('2026-01-01'),
+          effectiveTo: new Date('2026-12-31'),
+          monthlyRate: 850,
+          rateCurrency: 'TRY',
+          isActive: true,
+        },
+      });
+      await prisma.contractEquipment.create({
+        data: {
+          contractId: cnt001Ref.id,
+          equipmentId: equipmentIds['EQP-002'],
+          effectiveFrom: new Date('2026-01-01'),
+          effectiveTo: new Date('2026-12-31'),
+          monthlyRate: 850,
+          rateCurrency: 'TRY',
+          isActive: true,
+        },
+      });
+      console.log('V2 seed: 2 POS terminals assigned to CNT-001');
+    }
+  }
+
+  // 16. AreaOccupancy — 3 occupancy records
+  if (dutyfreeMainArea && intFoodHallArea && cipExecutiveDiningArea) {
+    const existingOcc = await prisma.areaOccupancy.findFirst({
+      where: { areaId: dutyfreeMainArea.id },
+    });
+
+    if (!existingOcc) {
+      await prisma.areaOccupancy.create({
+        data: {
+          areaId: dutyfreeMainArea.id,
+          tenantId: createdTenants['TNT-001'],
+          contractId: cnt001Ref?.id,
+          occupancyType: 'exclusive',
+          status: 'occupied',
+          occupiedFrom: new Date('2026-01-01'),
+          occupiedTo: new Date('2026-12-31'),
+          occupiedM2: 250.0,
+        },
+      });
+      await prisma.areaOccupancy.create({
+        data: {
+          areaId: intFoodHallArea.id,
+          tenantId: createdTenants['TNT-001'],
+          contractId: cnt001Ref?.id,
+          occupancyType: 'shared',
+          status: 'occupied',
+          occupiedFrom: new Date('2026-01-01'),
+          occupiedTo: new Date('2026-12-31'),
+          occupiedM2: 60.0,
+        },
+      });
+      await prisma.areaOccupancy.create({
+        data: {
+          areaId: cipExecutiveDiningArea.id,
+          tenantId: createdTenants['TNT-002'],
+          occupancyType: 'exclusive',
+          status: 'planned',
+          occupiedFrom: new Date('2026-03-01'),
+          occupiedTo: new Date('2027-02-28'),
+          occupiedM2: 68.0,
+        },
+      });
+      console.log('V2 seed: 3 area occupancy records created');
+    }
+  }
+
+  // 17. AreaAllocation — 1 allocation (active, 60/40 split) for INT Food Hall
+  if (intFoodHallArea) {
+    const existingAlloc = await prisma.areaAllocation.findFirst({
+      where: { areaId: intFoodHallArea.id },
+    });
+
+    if (!existingAlloc) {
+      const alloc = await prisma.areaAllocation.create({
+        data: {
+          airportId: airport.id,
+          areaId: intFoodHallArea.id,
+          allocationMethod: 'proportional_m2',
+          periodStart: new Date('2026-01-01'),
+          periodEnd: new Date('2026-12-31'),
+          totalCost: 50000,
+          currency: 'TRY',
+          status: 'active_alloc',
+          approvedBy: 'seed-admin',
+          approvedAt: new Date('2025-12-20'),
+          version: 1,
+        },
+      });
+
+      // 60/40 split between TNT-001 and TNT-002
+      await prisma.areaAllocationShare.create({
+        data: {
+          allocationId: alloc.id,
+          tenantId: createdTenants['TNT-001'],
+          contractId: cnt001Ref?.id,
+          shareRatio: 0.60,
+          calculatedAmount: 30000,
+        },
+      });
+      await prisma.areaAllocationShare.create({
+        data: {
+          allocationId: alloc.id,
+          tenantId: createdTenants['TNT-002'],
+          shareRatio: 0.40,
+          calculatedAmount: 20000,
+        },
+      });
+      console.log('V2 seed: 1 area allocation (active, 60/40 split) created');
+    }
+  }
+
+  // 18. TenantScore — 4 scores (TNT-001: Jan/Feb/Mar, TNT-002: Jan)
+  const existingScore = await prisma.tenantScore.findFirst({
+    where: { tenantId: createdTenants['TNT-001'] },
+  });
+
+  if (!existingScore) {
+    const scoreDefs = [
+      { tenantId: createdTenants['TNT-001'], period: '2026-01-01', payment: 90, declaration: 100, compliance: 100, revenue: 85, overall: 93, risk: 'low' as const, latePayments: 1, missedDecl: 0 },
+      { tenantId: createdTenants['TNT-001'], period: '2026-02-01', payment: 80, declaration: 100, compliance: 100, revenue: 100, overall: 93, risk: 'low' as const, latePayments: 2, missedDecl: 0 },
+      { tenantId: createdTenants['TNT-001'], period: '2026-03-01', payment: 80, declaration: 85, compliance: 100, revenue: 90, overall: 88, risk: 'low' as const, latePayments: 2, missedDecl: 1 },
+      { tenantId: createdTenants['TNT-002'], period: '2026-01-01', payment: 60, declaration: 70, compliance: 50, revenue: 45, overall: 57, risk: 'high' as const, latePayments: 4, missedDecl: 2 },
+    ];
+
+    for (const s of scoreDefs) {
+      await prisma.tenantScore.create({
+        data: {
+          tenantId: s.tenantId,
+          scorePeriod: new Date(s.period),
+          paymentScore: s.payment,
+          declarationScore: s.declaration,
+          complianceScore: s.compliance,
+          revenuePerformance: s.revenue,
+          overallScore: s.overall,
+          riskCategory: s.risk,
+          latePaymentCount: s.latePayments,
+          missedDeclarationCount: s.missedDecl,
+        },
+      });
+    }
+    console.log('V2 seed: 4 tenant scores created (TNT-001: 3, TNT-002: 1)');
+  }
+
+  // 19. CreditNote — 2 credit notes (1 draft, 1 issued)
+  if (cnt001Ref) {
+    const existingCN = await prisma.creditNote.findFirst({
+      where: { airportId: airport.id },
+    });
+
+    if (!existingCN) {
+      await prisma.creditNote.create({
+        data: {
+          airportId: airport.id,
+          tenantId: createdTenants['TNT-001'],
+          contractId: cnt001Ref.id,
+          creditNoteNumber: 'CN-001',
+          reason: 'billing_error',
+          status: 'draft',
+          amount: 2500,
+          currency: 'TRY',
+          description: 'Overcharged service charge for January 2026 — incorrect area m2 used',
+        },
+      });
+      await prisma.creditNote.create({
+        data: {
+          airportId: airport.id,
+          tenantId: createdTenants['TNT-001'],
+          contractId: cnt001Ref.id,
+          creditNoteNumber: 'CN-002',
+          reason: 'equipment_downtime',
+          status: 'issued',
+          amount: 850,
+          currency: 'TRY',
+          description: 'POS Terminal EQP-001 downtime: 3 days in February',
+          approvedBy: 'seed-admin',
+          approvedAt: new Date('2026-02-20'),
+          issuedAt: new Date('2026-02-22'),
+        },
+      });
+      console.log('V2 seed: 2 credit notes created (1 draft, 1 issued)');
+    }
+  }
+
   console.log('Seeding completed successfully!');
 }
 

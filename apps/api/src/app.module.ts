@@ -34,6 +34,13 @@ import { InvoicesModule } from './invoices/invoices.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ExchangeRatesModule } from './exchange-rates/exchange-rates.module';
 import { ReportsModule } from './reports/reports.module';
+import { EquipmentModule } from './equipment/equipment.module';
+import { TenantGroupsModule } from './tenant-groups/tenant-groups.module';
+import { AreaOccupanciesModule } from './area-occupancies/area-occupancies.module';
+import { ContractEquipmentModule } from './contract-equipment/contract-equipment.module';
+import { AreaAllocationsModule } from './area-allocations/area-allocations.module';
+import { TenantScoresModule } from './tenant-scores/tenant-scores.module';
+import { CreditNotesModule } from './credit-notes/credit-notes.module';
 
 @Module({
   imports: [
@@ -98,6 +105,14 @@ import { ReportsModule } from './reports/reports.module';
     ExchangeRatesModule,
     // Phase 6: Reporting
     ReportsModule,
+    // Phase 8: V2 Enterprise Service Layer
+    TenantGroupsModule,
+    EquipmentModule,
+    AreaOccupanciesModule,
+    ContractEquipmentModule,
+    AreaAllocationsModule,
+    TenantScoresModule,
+    CreditNotesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

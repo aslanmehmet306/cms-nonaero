@@ -18,6 +18,10 @@ const SEVERITY_MAP: Record<NotificationType, 'info' | 'warning' | 'error'> = {
   [NotificationType.billing_run_completed]: 'info',
   [NotificationType.contract_expiring]: 'warning',
   [NotificationType.mag_shortfall]: 'warning',
+  [NotificationType.equipment_maintenance_due]: 'warning',
+  [NotificationType.tenant_risk_category_changed]: 'warning',
+  [NotificationType.insurance_expiring]: 'warning',
+  [NotificationType.credit_note_issued]: 'info',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -34,6 +38,10 @@ const TEMPLATE_MAP: Record<NotificationType, string | undefined> = {
   [NotificationType.contract_expiring]: 'contract-expiring',
   [NotificationType.billing_run_completed]: undefined, // no email template
   [NotificationType.mag_shortfall]: undefined, // no email template
+  [NotificationType.equipment_maintenance_due]: undefined,
+  [NotificationType.tenant_risk_category_changed]: undefined,
+  [NotificationType.insurance_expiring]: undefined,
+  [NotificationType.credit_note_issued]: undefined,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -50,6 +58,10 @@ const SUBJECT_MAP: Record<NotificationType, string> = {
   [NotificationType.contract_expiring]: 'Sozlesme Sona Erme Bildirimi',
   [NotificationType.billing_run_completed]: 'Faturalama Tamamlandi',
   [NotificationType.mag_shortfall]: 'MAG Fark Bildirimi',
+  [NotificationType.equipment_maintenance_due]: 'Ekipman Bakim Hatirlatmasi',
+  [NotificationType.tenant_risk_category_changed]: 'Kiraci Risk Kategorisi Degisikligi',
+  [NotificationType.insurance_expiring]: 'Sigorta Sona Erme Uyarisi',
+  [NotificationType.credit_note_issued]: 'Kredi Notu Olusturuldu',
 };
 
 export interface NotifyParams {

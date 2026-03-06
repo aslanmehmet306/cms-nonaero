@@ -105,6 +105,8 @@ const OBLIGATION_TYPE_MAP: Record<ServiceType, ObligationType> = {
   [ServiceType.revenue_share]: ObligationType.revenue_share,
   [ServiceType.service_charge]: ObligationType.rent,
   [ServiceType.utility]: ObligationType.rent,
+  [ServiceType.equipment_rental]: ObligationType.equipment,
+  [ServiceType.allocation_charge]: ObligationType.allocation,
 };
 
 /**
@@ -115,6 +117,8 @@ const CHARGE_TYPE_MAP: Record<ServiceType, ChargeType> = {
   [ServiceType.revenue_share]: ChargeType.revenue_share,
   [ServiceType.service_charge]: ChargeType.service_charge,
   [ServiceType.utility]: ChargeType.utility,
+  [ServiceType.equipment_rental]: ChargeType.equipment_rental,
+  [ServiceType.allocation_charge]: ChargeType.allocation_charge,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

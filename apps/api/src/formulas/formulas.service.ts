@@ -48,6 +48,14 @@ const SAMPLE_DATA: Record<FormulaType, Record<string, unknown>> = {
     days_in_period: 30,
     days_occupied: 20,
   },
+  [FormulaType.metered]: {
+    meter_consumption: 1500,
+    rate_per_unit: 0.85,
+  },
+  [FormulaType.allocation]: {
+    allocation_total_cost: 50000,
+    allocation_share_ratio: 0.25,
+  },
 };
 
 @Injectable()
