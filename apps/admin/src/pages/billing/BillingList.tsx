@@ -17,10 +17,12 @@ import {
   type BillingRun,
 } from '@/api/billing';
 import { BillingRunModal } from './BillingRunModal';
+import { useIsReadOnly } from '@/hooks/useRoleAccess';
 import { BillingRunStatus } from '@shared-types/enums';
 
 export function BillingList() {
   const queryClient = useQueryClient();
+  const readOnly = useIsReadOnly();
   const [modalOpen, setModalOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
@@ -124,6 +126,7 @@ export function BillingList() {
       header: 'Actions',
       cell: ({ row }) => {
         const run = row.original;
+        if (readOnly) return <span className="text-xs text-muted-foreground">View only</span>;
         return (
           <div className="flex items-center gap-1">
             {run.status === BillingRunStatus.draft_ready && (
@@ -192,10 +195,12 @@ export function BillingList() {
         title="Billing Runs"
         description="Manage billing runs and invoicing"
         actions={
-          <Button onClick={() => setModalOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Billing Run
-          </Button>
+          !readOnly ? (
+            <Button onClick={() => setModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Billing Run
+            </Button>
+          ) : undefined
         }
       />
 

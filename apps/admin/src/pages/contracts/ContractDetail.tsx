@@ -32,6 +32,7 @@ import {
   type ContractVersion,
 } from '@/api/contracts';
 import { useAuthStore } from '@/store/authStore';
+import { useIsReadOnly } from '@/hooks/useRoleAccess';
 import { ContractStatus } from '@shared-types/enums';
 
 // Valid transitions map
@@ -58,6 +59,7 @@ export function ContractDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
+  const readOnly = useIsReadOnly();
 
   const [amendOpen, setAmendOpen] = useState(false);
   const [amendDate, setAmendDate] = useState('');
@@ -147,9 +149,10 @@ export function ContractDetail() {
   // Separation of duties: publish button disabled for contract creator
   const isCreator = user?.sub === contract.createdBy;
   const isPublishDisabled = (target: string) =>
-    target === ContractStatus.published &&
-    isCreator &&
-    user?.role === 'commercial_manager';
+    readOnly ||
+    (target === ContractStatus.published &&
+      isCreator &&
+      user?.role === 'commercial_manager');
 
   return (
     <div className="p-6">
@@ -162,7 +165,7 @@ export function ContractDetail() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
-            {contract.status === ContractStatus.draft && (
+            {contract.status === ContractStatus.draft && !readOnly && (
               <Button
                 variant="outline"
                 onClick={() => navigate(`/contracts/${id}`)}
@@ -171,7 +174,7 @@ export function ContractDetail() {
                 Edit
               </Button>
             )}
-            {contract.status === ContractStatus.active && (
+            {contract.status === ContractStatus.active && !readOnly && (
               <Button variant="outline" onClick={() => setAmendOpen(true)}>
                 Amend
               </Button>

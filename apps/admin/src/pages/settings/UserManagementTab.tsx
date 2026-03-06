@@ -36,6 +36,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { getUsers, createUser, updateUser, type User } from '@/api/users';
 import { getAirports, type Airport } from '@/api/airports';
+import { useIsReadOnly } from '@/hooks/useRoleAccess';
 import { UserRole } from '@shared-types/enums';
 
 const createUserSchema = z.object({
@@ -66,6 +67,7 @@ const ROLE_OPTIONS = [
 
 export function UserManagementTab() {
   const queryClient = useQueryClient();
+  const readOnly = useIsReadOnly();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
@@ -158,10 +160,10 @@ export function UserManagementTab() {
       header: 'Airport',
       cell: ({ row }) => row.original.airport?.name ?? '-',
     },
-    {
+    ...(!readOnly ? [{
       id: 'actions',
       header: '',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: { original: User } }) => (
         <Button
           variant="ghost"
           size="sm"
@@ -171,7 +173,7 @@ export function UserManagementTab() {
           Edit
         </Button>
       ),
-    },
+    }] : []),
   ];
 
   if (usersLoading) {
@@ -187,9 +189,11 @@ export function UserManagementTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={openCreate}>Add User</Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end">
+          <Button onClick={openCreate}>Add User</Button>
+        </div>
+      )}
 
       <div className="overflow-x-auto">
         <DataTable columns={columns} data={users} searchKey="name" />

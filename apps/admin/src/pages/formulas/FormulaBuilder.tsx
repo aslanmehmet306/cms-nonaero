@@ -169,9 +169,25 @@ export function FormulaBuilder() {
   });
 
   const dryRunMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const paramsStr = form.getValues('customParameters');
       const variables = paramsStr ? JSON.parse(paramsStr) : undefined;
+
+      // In create mode, save formula first then dry-run
+      if (!isEdit) {
+        const values = form.getValues();
+        const created = await createFormula({
+          name: values.name,
+          description: values.description || undefined,
+          type: values.type,
+          expression: values.expression,
+          customParameters: variables,
+        });
+        queryClient.invalidateQueries({ queryKey: ['formulas'] });
+        navigate(`/formulas/${created.id}`, { replace: true });
+        return dryRunFormula(created.id, variables);
+      }
+
       return dryRunFormula(id!, variables);
     },
     onSuccess: (result) => {
@@ -354,17 +370,19 @@ export function FormulaBuilder() {
                         ? 'Update Formula'
                         : 'Create Formula'}
                   </Button>
-                  {isEdit && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => dryRunMutation.mutate()}
-                      disabled={dryRunMutation.isPending}
-                    >
-                      <Play className="mr-2 h-4 w-4" />
-                      {dryRunMutation.isPending ? 'Running...' : 'Run Preview'}
-                    </Button>
-                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => dryRunMutation.mutate()}
+                    disabled={dryRunMutation.isPending}
+                  >
+                    <Play className="mr-2 h-4 w-4" />
+                    {dryRunMutation.isPending
+                      ? 'Running...'
+                      : isEdit
+                        ? 'Run Preview'
+                        : 'Save & Preview'}
+                  </Button>
                 </div>
               </form>
             </Form>

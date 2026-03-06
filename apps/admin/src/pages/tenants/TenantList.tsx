@@ -9,6 +9,7 @@ import { DataTable } from '@/components/shared/DataTable';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { getTenants, updateTenant, type Tenant } from '@/api/tenants';
+import { useIsReadOnly } from '@/hooks/useRoleAccess';
 import { TenantStatus } from '@shared-types/enums';
 
 // Status transition config per current status
@@ -29,6 +30,7 @@ const statusActions: Record<string, { label: string; target: string; variant?: '
 export function TenantList() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const readOnly = useIsReadOnly();
 
   const { data, isLoading } = useQuery({
     queryKey: ['tenants'],
@@ -79,14 +81,16 @@ export function TenantList() {
 
         return (
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(`/tenants/${tenant.id}`)}
-            >
-              Edit
-            </Button>
-            {actions.map((a) => (
+            {!readOnly && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(`/tenants/${tenant.id}`)}
+              >
+                Edit
+              </Button>
+            )}
+            {!readOnly && actions.map((a) => (
               <ConfirmDialog
                 key={a.target}
                 title={`${a.label} Tenant?`}
@@ -120,10 +124,12 @@ export function TenantList() {
         title="Tenants"
         description="Manage airport tenants"
         actions={
-          <Button onClick={() => navigate('/tenants/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Tenant
-          </Button>
+          !readOnly ? (
+            <Button onClick={() => navigate('/tenants/new')}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Tenant
+            </Button>
+          ) : undefined
         }
       />
 

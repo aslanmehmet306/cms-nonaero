@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { getContracts, type Contract } from '@/api/contracts';
+import { useIsReadOnly } from '@/hooks/useRoleAccess';
 import { ContractStatus } from '@shared-types/enums';
 
 const statusOptions = Object.values(ContractStatus);
@@ -69,6 +70,7 @@ const columns: ColumnDef<Contract, unknown>[] = [
 
 export function ContractList() {
   const navigate = useNavigate();
+  const readOnly = useIsReadOnly();
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const { data, isLoading } = useQuery({
@@ -85,10 +87,12 @@ export function ContractList() {
         title="Contracts"
         description="Manage airport tenant contracts"
         actions={
-          <Button onClick={() => navigate('/contracts/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Contract
-          </Button>
+          !readOnly ? (
+            <Button onClick={() => navigate('/contracts/new')}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Contract
+            </Button>
+          ) : undefined
         }
       />
 
