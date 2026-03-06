@@ -2,8 +2,10 @@ import { createBrowserRouter, type RouterProviderProps } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute';
 import { AppShell } from '@/components/layout/AppShell';
 import { Login } from '@/pages/Login';
+import { Dashboard } from '@/pages/Dashboard';
+import { InvoiceList } from '@/pages/invoices/InvoiceList';
 
-// Placeholder component for routes built in 07-02 and 07-03
+// Placeholder component for routes built in 07-02
 function Placeholder({ title }: { title: string }) {
   return (
     <div className="p-6">
@@ -26,7 +28,7 @@ export const router: RouterProviderProps['router'] = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          { index: true, element: <Placeholder title="Dashboard" /> },
+          { index: true, element: <Dashboard /> },
           { path: 'contracts', element: <Placeholder title="Contracts" /> },
           { path: 'contracts/new', element: <Placeholder title="New Contract" /> },
           { path: 'contracts/:id', element: <Placeholder title="Contract Detail" /> },
@@ -37,7 +39,7 @@ export const router: RouterProviderProps['router'] = createBrowserRouter([
           { path: 'formulas/:id', element: <Placeholder title="Formula Builder" /> },
           { path: 'services', element: <Placeholder title="Services" /> },
           { path: 'billing', element: <Placeholder title="Billing" /> },
-          { path: 'invoices', element: <Placeholder title="Invoices" /> },
+          { path: 'invoices', element: <InvoiceList /> },
           { path: 'settings', element: <Placeholder title="Settings" /> },
         ],
       },
