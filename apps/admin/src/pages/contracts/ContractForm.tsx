@@ -388,7 +388,7 @@ export function ContractForm() {
                   <SelectContent>
                     {areas.map((a) => (
                       <SelectItem key={a.id} value={a.id}>
-                        {a.name} ({a.code}) - {a.type}
+                        {a.name} ({a.code}) - {a.areaType}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -20,6 +20,9 @@ import { FormulaList } from '@/pages/formulas/FormulaList';
 import { FormulaBuilder } from '@/pages/formulas/FormulaBuilder';
 import { ServiceList } from '@/pages/services/ServiceList';
 
+// Area pages
+import { AreaList } from '@/pages/areas/AreaList';
+
 // Billing pages (07-02)
 import { BillingList } from '@/pages/billing/BillingList';
 
@@ -37,6 +40,8 @@ export const router: RouterProviderProps['router'] = createBrowserRouter([
         element: <AppShell />,
         children: [
           { index: true, element: <Dashboard /> },
+          // Area routes
+          { path: 'areas', element: <AreaList /> },
           // Contract routes (07-02)
           { path: 'contracts', element: <ContractList /> },
           { path: 'contracts/new', element: <ContractForm /> },
