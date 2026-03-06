@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   FileText,
   Building2,
+  MapPin,
   Wrench,
   Calculator,
   CreditCard,
@@ -13,6 +14,7 @@ import { cn } from '@/lib/utils';
 
 const navItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+  { label: 'Areas', path: '/areas', icon: MapPin },
   { label: 'Contracts', path: '/contracts', icon: FileText },
   { label: 'Tenants', path: '/tenants', icon: Building2 },
   { label: 'Services', path: '/services', icon: Wrench },
