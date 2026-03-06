@@ -1,0 +1,33 @@
+<h2 style="color: #333; margin-top: 0;">Odeme Basarisiz - {{invoiceNumber}}</h2>
+
+<p>Sayin <strong>{{tenantName}}</strong>,</p>
+
+<p>
+  <strong>{{invoiceNumber}}</strong> numarali faturaniz icin odeme islemi
+  basarisiz olmustur.
+</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+  <tr style="background: #f8f9fa;">
+    <td style="padding: 8px; border: 1px solid #dee2e6;"><strong>Fatura No</strong></td>
+    <td style="padding: 8px; border: 1px solid #dee2e6;">{{invoiceNumber}}</td>
+  </tr>
+  <tr>
+    <td style="padding: 8px; border: 1px solid #dee2e6;"><strong>Tutar</strong></td>
+    <td style="padding: 8px; border: 1px solid #dee2e6;">{{currency}} {{amount}}</td>
+  </tr>
+</table>
+
+<div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 12px; margin: 16px 0;">
+  <p style="margin: 0;"><strong>Lutfen odeme bilgilerinizi kontrol ediniz ve yeniden deneyiniz.</strong></p>
+</div>
+
+{{#if hostedUrl}}
+<div style="text-align: center; margin: 24px 0;">
+  <a href="{{hostedUrl}}" style="background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+    Odemeyi Yeniden Dene
+  </a>
+</div>
+{{/if}}
+
+<p>Saygilarimizla,<br>Havalimani Ticari Gelir Yonetimi</p>

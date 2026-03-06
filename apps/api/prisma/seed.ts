@@ -439,6 +439,629 @@ async function main() {
     console.log('Billing policy already exists, skipping');
   }
 
+  // 6. Formulas — 12 covering all 6 formula types (all published)
+  // ---------------------------------------------------------------------------
+  const formulaDefs = [
+    {
+      code: 'RENT-FIXED',
+      name: 'Fixed Rent',
+      formulaType: 'arithmetic' as const,
+      expression: 'area_m2 * rate_per_m2',
+      variables: {
+        area_m2: 'Area in square meters',
+        rate_per_m2: 'Monthly rate per m2',
+      },
+    },
+    {
+      code: 'RENT-INDEXED',
+      name: 'Indexed Rent',
+      formulaType: 'escalation' as const,
+      expression: 'area_m2 * rate_per_m2 * (1 + index_rate)',
+      variables: {
+        area_m2: 'Area in m2',
+        rate_per_m2: 'Base rate per m2',
+        index_rate: 'Annual escalation rate',
+      },
+    },
+    {
+      code: 'REVSHARE-FLAT',
+      name: 'Revenue Share - Flat',
+      formulaType: 'revenue_share' as const,
+      expression: 'revenue * rate',
+      variables: {
+        revenue: 'Monthly gross revenue',
+        rate: 'Revenue share percentage (e.g. 0.07 = 7%)',
+      },
+    },
+    {
+      code: 'REVSHARE-TIERED',
+      name: 'Revenue Share - Tiered Step Band',
+      formulaType: 'step_band' as const,
+      expression: 'revenue * rate',
+      variables: {
+        revenue: 'Monthly gross revenue',
+        bands: [
+          { from: 0, to: 100000, rate: 0.05 },
+          { from: 100000, to: 300000, rate: 0.08 },
+          { from: 300000, to: 999999999, rate: 0.1 },
+        ],
+      },
+    },
+    {
+      code: 'REVSHARE-CONDITIONAL',
+      name: 'Revenue Share - Conditional Rate',
+      formulaType: 'conditional' as const,
+      expression: 'revenue > 100000 ? revenue * 0.08 : revenue * 0.05',
+      variables: {
+        revenue: 'Monthly gross revenue',
+      },
+    },
+    {
+      code: 'SERVICE-FIXED',
+      name: 'Fixed Service Charge',
+      formulaType: 'arithmetic' as const,
+      expression: 'monthly_amount',
+      variables: {
+        monthly_amount: 'Fixed monthly service charge amount',
+      },
+    },
+    {
+      code: 'SERVICE-AREA',
+      name: 'Area-Based Service Charge',
+      formulaType: 'arithmetic' as const,
+      expression: 'area_m2 * rate_per_m2_service',
+      variables: {
+        area_m2: 'Area in m2',
+        rate_per_m2_service: 'Service charge rate per m2',
+      },
+    },
+    {
+      code: 'UTILITY-ELEC',
+      name: 'Electricity Utility',
+      formulaType: 'arithmetic' as const,
+      expression: 'consumption * unit_rate',
+      variables: {
+        consumption: 'kWh consumed in period',
+        unit_rate: 'Price per kWh',
+      },
+    },
+    {
+      code: 'UTILITY-WATER',
+      name: 'Water Utility',
+      formulaType: 'arithmetic' as const,
+      expression: 'consumption * unit_rate',
+      variables: {
+        consumption: 'm3 consumed in period',
+        unit_rate: 'Price per m3',
+      },
+    },
+    {
+      code: 'UTILITY-GAS',
+      name: 'Gas Utility',
+      formulaType: 'arithmetic' as const,
+      expression: 'consumption * unit_rate',
+      variables: {
+        consumption: 'm3 gas consumed in period',
+        unit_rate: 'Price per m3',
+      },
+    },
+    {
+      code: 'PRORATION',
+      name: 'Proration Formula',
+      formulaType: 'proration' as const,
+      expression: 'monthly_amount * (days_occupied / days_in_period)',
+      variables: {
+        monthly_amount: 'Full month amount',
+        days_occupied: 'Days in partial period',
+        days_in_period: 'Total days in period',
+      },
+    },
+    {
+      code: 'ESCALATION-CPI',
+      name: 'CPI Escalation',
+      formulaType: 'escalation' as const,
+      expression: 'base_amount * (1 + index_rate)',
+      variables: {
+        base_amount: 'Previous period amount',
+        index_rate: 'CPI adjustment rate',
+      },
+    },
+  ];
+
+  const createdFormulas: Record<string, string> = {};
+
+  for (const f of formulaDefs) {
+    // Use upsert by airportId+code unique pair
+    const formula = await prisma.formula.upsert({
+      where: {
+        // Note: no compound unique index on formula — use findFirst + create pattern
+        id: (
+          await prisma.formula
+            .findFirst({ where: { airportId: airport.id, code: f.code } })
+            .then((r) => r?.id ?? 'non-existent-placeholder')
+        ),
+      },
+      update: {},
+      create: {
+        airportId: airport.id,
+        code: f.code,
+        name: f.name,
+        formulaType: f.formulaType,
+        expression: f.expression,
+        variables: f.variables,
+        status: 'published',
+        version: 1,
+        publishedAt: new Date('2026-01-01'),
+      },
+    });
+    createdFormulas[f.code] = formula.id;
+  }
+
+  console.log(`Formulas: ${formulaDefs.length} seeded`);
+
+  // 7. Service Definitions — 8 linked to formulas (all published)
+  // ---------------------------------------------------------------------------
+  const serviceDefs = [
+    {
+      code: 'SVC-RENT-FIXED',
+      name: 'Fixed Rent Service',
+      serviceType: 'rent' as const,
+      formulaCode: 'RENT-FIXED',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-RENT-INDEXED',
+      name: 'Indexed Rent Service',
+      serviceType: 'rent' as const,
+      formulaCode: 'RENT-INDEXED',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-REVSHARE-FLAT',
+      name: 'Revenue Share - Flat Service',
+      serviceType: 'revenue_share' as const,
+      formulaCode: 'REVSHARE-FLAT',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-REVSHARE-TIERED',
+      name: 'Revenue Share - Tiered Service',
+      serviceType: 'revenue_share' as const,
+      formulaCode: 'REVSHARE-TIERED',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-CAM',
+      name: 'Common Area Maintenance',
+      serviceType: 'service_charge' as const,
+      formulaCode: 'SERVICE-AREA',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-ELEC',
+      name: 'Electricity Service',
+      serviceType: 'utility' as const,
+      formulaCode: 'UTILITY-ELEC',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-WATER',
+      name: 'Water Service',
+      serviceType: 'utility' as const,
+      formulaCode: 'UTILITY-WATER',
+      defaultBillingFreq: 'monthly' as const,
+    },
+    {
+      code: 'SVC-GAS',
+      name: 'Gas Service',
+      serviceType: 'utility' as const,
+      formulaCode: 'UTILITY-GAS',
+      defaultBillingFreq: 'quarterly' as const,
+    },
+  ];
+
+  for (const s of serviceDefs) {
+    const formulaId = createdFormulas[s.formulaCode];
+    if (!formulaId) {
+      console.warn(`Formula ${s.formulaCode} not found, skipping service ${s.code}`);
+      continue;
+    }
+
+    const existing = await prisma.serviceDefinition.findFirst({
+      where: { airportId: airport.id, code: s.code },
+    });
+
+    if (!existing) {
+      await prisma.serviceDefinition.create({
+        data: {
+          airportId: airport.id,
+          code: s.code,
+          name: s.name,
+          serviceType: s.serviceType,
+          formulaId,
+          defaultCurrency: 'TRY',
+          defaultBillingFreq: s.defaultBillingFreq,
+          status: 'published',
+          version: 1,
+          effectiveFrom: new Date('2026-01-01'),
+          publishedAt: new Date('2026-01-01'),
+        },
+      });
+    }
+  }
+
+  console.log(`Service definitions: ${serviceDefs.length} seeded`);
+
+  // 8. Contract seed data — 3 sample contracts with area and service assignments
+  // ---------------------------------------------------------------------------
+
+  // Look up area IDs needed for contract assignments
+  const dutyfreeMainArea = await prisma.area.findFirst({
+    where: { airportId: airport.id, code: 'DOM-G-R-001' },
+  });
+  const intFoodHallArea = await prisma.area.findFirst({
+    where: { airportId: airport.id, code: 'INT-G-F-001' },
+  });
+  const cipExecutiveDiningArea = await prisma.area.findFirst({
+    where: { airportId: airport.id, code: 'CIP-1F-F-001' },
+  });
+  const groundFloorCafeArea = await prisma.area.findFirst({
+    where: { airportId: airport.id, code: 'DOM-G-F-001' },
+  });
+
+  // Look up service definition IDs needed for contract assignments
+  const svcRentFixed = await prisma.serviceDefinition.findFirst({
+    where: { airportId: airport.id, code: 'SVC-RENT-FIXED' },
+  });
+  const svcRevShare = await prisma.serviceDefinition.findFirst({
+    where: { airportId: airport.id, code: 'SVC-REVSHARE-FLAT' },
+  });
+  const svcCam = await prisma.serviceDefinition.findFirst({
+    where: { airportId: airport.id, code: 'SVC-CAM' },
+  });
+  const svcElec = await prisma.serviceDefinition.findFirst({
+    where: { airportId: airport.id, code: 'SVC-ELEC' },
+  });
+
+  // CNT-001: Duty Free Main (TNT-001), active contract with 2 areas and 3 services
+  const existingCnt001 = await prisma.contract.findFirst({
+    where: { airportId: airport.id, contractNumber: 'CNT-001', version: 1 },
+  });
+
+  if (!existingCnt001) {
+    const cnt001 = await prisma.contract.create({
+      data: {
+        airportId: airport.id,
+        tenantId: createdTenants['TNT-001'],
+        contractNumber: 'CNT-001',
+        version: 1,
+        status: 'active',
+        effectiveFrom: new Date('2026-01-01'),
+        effectiveTo: new Date('2026-12-31'),
+        annualMag: 500000,
+        magCurrency: 'TRY',
+        billingFrequency: 'monthly',
+        signedAt: new Date('2025-12-15'),
+        publishedAt: new Date('2025-12-10'),
+      },
+    });
+
+    // 2 areas: Duty Free Main + International Food Hall
+    if (dutyfreeMainArea) {
+      await prisma.contractArea.create({
+        data: {
+          contractId: cnt001.id,
+          areaId: dutyfreeMainArea.id,
+          effectiveFrom: new Date('2026-01-01'),
+          effectiveTo: new Date('2026-12-31'),
+        },
+      });
+    }
+    if (intFoodHallArea) {
+      await prisma.contractArea.create({
+        data: {
+          contractId: cnt001.id,
+          areaId: intFoodHallArea.id,
+          effectiveFrom: new Date('2026-01-01'),
+          effectiveTo: new Date('2026-12-31'),
+        },
+      });
+    }
+
+    // 3 services: rent, revenue_share, service_charge
+    if (svcRentFixed) {
+      await prisma.contractService.create({
+        data: { contractId: cnt001.id, serviceDefinitionId: svcRentFixed.id },
+      });
+    }
+    if (svcRevShare) {
+      await prisma.contractService.create({
+        data: { contractId: cnt001.id, serviceDefinitionId: svcRevShare.id },
+      });
+    }
+    if (svcCam) {
+      await prisma.contractService.create({
+        data: { contractId: cnt001.id, serviceDefinitionId: svcCam.id },
+      });
+    }
+    console.log('CNT-001: Duty Free Main contract created (active, 2 areas, 3 services)');
+  } else {
+    console.log('CNT-001: already exists, skipping');
+  }
+
+  // CNT-002: CIP Lounge (TNT-002), draft contract with 1 area and 2 services
+  const existingCnt002 = await prisma.contract.findFirst({
+    where: { airportId: airport.id, contractNumber: 'CNT-002', version: 1 },
+  });
+
+  if (!existingCnt002) {
+    const cnt002 = await prisma.contract.create({
+      data: {
+        airportId: airport.id,
+        tenantId: createdTenants['TNT-002'],
+        contractNumber: 'CNT-002',
+        version: 1,
+        status: 'draft',
+        effectiveFrom: new Date('2026-03-01'),
+        effectiveTo: new Date('2027-02-28'),
+        annualMag: 200000,
+        magCurrency: 'TRY',
+        billingFrequency: 'monthly',
+      },
+    });
+
+    // 1 area: CIP Executive Dining
+    if (cipExecutiveDiningArea) {
+      await prisma.contractArea.create({
+        data: {
+          contractId: cnt002.id,
+          areaId: cipExecutiveDiningArea.id,
+          effectiveFrom: new Date('2026-03-01'),
+          effectiveTo: new Date('2027-02-28'),
+        },
+      });
+    }
+
+    // 2 services: rent, utility
+    if (svcRentFixed) {
+      await prisma.contractService.create({
+        data: { contractId: cnt002.id, serviceDefinitionId: svcRentFixed.id },
+      });
+    }
+    if (svcElec) {
+      await prisma.contractService.create({
+        data: { contractId: cnt002.id, serviceDefinitionId: svcElec.id },
+      });
+    }
+    console.log('CNT-002: CIP Lounge contract created (draft, 1 area, 2 services)');
+  } else {
+    console.log('CNT-002: already exists, skipping');
+  }
+
+  // CNT-003: Ground Floor Retail (TNT-003), published contract with 1 area and 1 service (no MAG)
+  const existingCnt003 = await prisma.contract.findFirst({
+    where: { airportId: airport.id, contractNumber: 'CNT-003', version: 1 },
+  });
+
+  if (!existingCnt003) {
+    const cnt003 = await prisma.contract.create({
+      data: {
+        airportId: airport.id,
+        tenantId: createdTenants['TNT-003'],
+        contractNumber: 'CNT-003',
+        version: 1,
+        status: 'published',
+        effectiveFrom: new Date('2026-06-01'),
+        effectiveTo: new Date('2027-05-31'),
+        annualMag: null, // no MAG
+        billingFrequency: 'monthly',
+        signedAt: new Date('2026-02-20'),
+        publishedAt: new Date('2026-02-15'),
+      },
+    });
+
+    // 1 area: Ground Floor Cafe
+    if (groundFloorCafeArea) {
+      await prisma.contractArea.create({
+        data: {
+          contractId: cnt003.id,
+          areaId: groundFloorCafeArea.id,
+          effectiveFrom: new Date('2026-06-01'),
+          effectiveTo: new Date('2027-05-31'),
+        },
+      });
+    }
+
+    // 1 service: rent
+    if (svcRentFixed) {
+      await prisma.contractService.create({
+        data: { contractId: cnt003.id, serviceDefinitionId: svcRentFixed.id },
+      });
+    }
+    console.log('CNT-003: Ground Floor Retail contract created (published, 1 area, 1 service, no MAG)');
+  } else {
+    console.log('CNT-003: already exists, skipping');
+  }
+
+  // 9. Phase 4: Demo declarations + meter readings for CNT-001
+  // ---------------------------------------------------------------------------
+  const cnt001Ref = existingCnt001 ?? await prisma.contract.findFirst({
+    where: { airportId: airport.id, contractNumber: 'CNT-001', version: 1 },
+  });
+
+  if (cnt001Ref) {
+    const existingDecl = await prisma.declaration.findFirst({
+      where: { contractId: cnt001Ref.id, declarationType: 'revenue' },
+    });
+
+    if (!existingDecl) {
+      // Revenue declarations: Jan, Feb, Mar 2026
+      const revenueMonths = [
+        { start: '2026-01-01', end: '2026-01-31', lines: [
+          { category: 'Restaurant', gross: 15000 },
+          { category: 'Retail', gross: 12000 },
+          { category: 'Lounge', gross: 8000 },
+        ]}, // total 35,000 — below monthly MAG (41,667)
+        { start: '2026-02-01', end: '2026-02-28', lines: [
+          { category: 'Restaurant', gross: 18000 },
+          { category: 'Retail', gross: 14000 },
+          { category: 'Lounge', gross: 10000 },
+        ]}, // total 42,000 — above monthly MAG
+        { start: '2026-03-01', end: '2026-03-31', lines: [
+          { category: 'Restaurant', gross: 16000 },
+          { category: 'Retail', gross: 13000 },
+          { category: 'Lounge', gross: 9000 },
+        ]}, // total 38,000 — below monthly MAG
+      ];
+
+      for (const month of revenueMonths) {
+        const decl = await prisma.declaration.create({
+          data: {
+            airportId: airport.id,
+            tenantId: createdTenants['TNT-001'],
+            contractId: cnt001Ref.id,
+            declarationType: 'revenue',
+            periodStart: new Date(month.start),
+            periodEnd: new Date(month.end),
+            status: 'frozen',
+            submittedAt: new Date(month.end),
+            frozenAt: new Date(month.end),
+            frozenToken: `seed-frozen-${month.start}`,
+          },
+        });
+
+        for (const line of month.lines) {
+          await prisma.declarationLine.create({
+            data: {
+              declarationId: decl.id,
+              category: line.category,
+              grossAmount: line.gross,
+              deductions: 0,
+              amount: line.gross,
+            },
+          });
+        }
+      }
+
+      console.log('Phase 4 seed: 3 revenue declarations (Jan-Mar) created for CNT-001');
+
+      // Meter readings: Jan + Feb electricity
+      const meterReadings = [
+        { start: '2026-01-01', end: '2026-01-31', current: 15000, previous: 12500, consumption: 2500 },
+        { start: '2026-02-01', end: '2026-02-28', current: 17800, previous: 15000, consumption: 2800 },
+      ];
+
+      for (const meter of meterReadings) {
+        const meterDecl = await prisma.declaration.create({
+          data: {
+            airportId: airport.id,
+            tenantId: createdTenants['TNT-001'],
+            contractId: cnt001Ref.id,
+            declarationType: 'meter_reading',
+            periodStart: new Date(meter.start),
+            periodEnd: new Date(meter.end),
+            status: 'frozen',
+            submittedAt: new Date(meter.end),
+            frozenAt: new Date(meter.end),
+            frozenToken: `seed-meter-${meter.start}`,
+          },
+        });
+
+        await prisma.declarationLine.create({
+          data: {
+            declarationId: meterDecl.id,
+            category: 'electricity',
+            grossAmount: meter.current,
+            deductions: 0,
+            amount: meter.consumption,
+            unitOfMeasure: 'kWh',
+            notes: JSON.stringify({
+              meterType: 'electricity',
+              unit: 'kWh',
+              location: 'Duty Free Main — DOM-G-R-001',
+              previousReading: meter.previous.toString(),
+            }),
+          },
+        });
+      }
+
+      console.log('Phase 4 seed: 2 meter reading declarations (Jan-Feb) created for CNT-001');
+    } else {
+      console.log('Phase 4 seed: declarations already exist, skipping');
+    }
+  }
+
+  // 10. Phase 5: Demo BillingRun + Notification records
+  // ---------------------------------------------------------------------------
+  const existingBillingRun = await prisma.billingRun.findFirst({
+    where: { airportId: airport.id, runType: 'manual' },
+  });
+
+  if (!existingBillingRun) {
+    await prisma.billingRun.create({
+      data: {
+        airportId: airport.id,
+        runType: 'manual',
+        periodStart: new Date(2026, 0, 1),  // Jan 2026
+        periodEnd: new Date(2026, 0, 31),
+        status: 'completed',
+        runMode: 'full',
+        totalObligations: 5,
+        totalAmount: 125000,
+        totalInvoices: 3,
+        completedAt: new Date(),
+        contractSnapshot: { contracts: ['demo snapshot'] },
+      },
+    });
+    console.log('Phase 5 seed: Demo billing run created (completed, Jan 2026)');
+  } else {
+    console.log('Phase 5 seed: Billing run already exists, skipping');
+  }
+
+  // Demo Notification records (3 items showing different types/severities)
+  const existingNotif = await prisma.notification.findFirst({
+    where: { airportId: airport.id },
+  });
+
+  if (!existingNotif) {
+    const demoNotifications = [
+      {
+        airportId: airport.id,
+        tenantId: createdTenants['TNT-001'],
+        type: 'invoice_created' as const,
+        channel: 'both' as const,
+        title: 'Fatura Olusturuldu - INV-2026-001',
+        body: 'Ocak 2026 donemi icin faturaniz olusturulmustur.',
+        isRead: false,
+      },
+      {
+        airportId: airport.id,
+        tenantId: createdTenants['TNT-001'],
+        type: 'payment_received' as const,
+        channel: 'in_app' as const,
+        title: 'Odeme Alindi - INV-2026-001',
+        body: 'TRY 25,000.00 tutarinda odeme basariyla alindi.',
+        isRead: true,
+        readAt: new Date(),
+      },
+      {
+        airportId: airport.id,
+        type: 'billing_run_completed' as const,
+        channel: 'in_app' as const,
+        title: 'Faturalama Tamamlandi',
+        body: 'Ocak 2026 faturalama calismasi tamamlandi. 3 fatura olusturuldu.',
+        isRead: false,
+      },
+    ];
+
+    for (const notif of demoNotifications) {
+      await prisma.notification.create({ data: notif });
+    }
+    console.log('Phase 5 seed: 3 demo notification records created');
+  } else {
+    console.log('Phase 5 seed: Notifications already exist, skipping');
+  }
+
   console.log('Seeding completed successfully!');
 }
 

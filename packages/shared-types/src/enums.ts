@@ -63,6 +63,7 @@ export enum ContractStatus {
   in_review = 'in_review',
   published = 'published',
   active = 'active',
+  pending_amendment = 'pending_amendment',
   amended = 'amended',
   suspended = 'suspended',
   terminated = 'terminated',

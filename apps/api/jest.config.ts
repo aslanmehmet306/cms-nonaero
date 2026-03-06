@@ -13,6 +13,8 @@ const config: Config = {
   moduleNameMapper: {
     '^@shared-types/(.*)$': '<rootDir>/../../packages/shared-types/src/$1',
     '^@shared-types$': '<rootDir>/../../packages/shared-types/src',
+    '^@airport-revenue/formula-engine$':
+      '<rootDir>/../../packages/formula-engine/src/index.ts',
   },
 };
 

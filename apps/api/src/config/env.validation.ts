@@ -47,6 +47,36 @@ export class EnvironmentVariables {
   @IsEnum(NodeEnv)
   @IsOptional()
   NODE_ENV: NodeEnv = NodeEnv.development;
+
+  @IsString()
+  @IsOptional()
+  STRIPE_SECRET_KEY?: string;
+
+  @IsString()
+  @IsOptional()
+  REDIS_HOST: string = 'localhost';
+
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  REDIS_PORT: number = 6379;
+
+  @IsString()
+  @IsOptional()
+  STRIPE_WEBHOOK_SECRET?: string;
+
+  @IsString()
+  @IsOptional()
+  SMTP_HOST: string = 'localhost';
+
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  SMTP_PORT: number = 1025;
+
+  @IsString()
+  @IsOptional()
+  SMTP_FROM: string = 'noreply@airport-revenue.local';
 }
 
 export function validate(config: Record<string, unknown>) {

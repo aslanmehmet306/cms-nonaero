@@ -9,11 +9,11 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const logger = new Logger('Bootstrap');
 
   // Global prefix for all routes, excluding health endpoints for k8s/LB compatibility
-  app.setGlobalPrefix('api/v1', { exclude: ['health/(.*)'] });
+  app.setGlobalPrefix('api/v1', { exclude: ['health/(.*)', 'admin/queues(.*)'] });
 
   // Security: HTTP headers
   app.use(helmet());

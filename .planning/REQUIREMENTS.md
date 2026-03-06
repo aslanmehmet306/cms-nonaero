@@ -24,10 +24,10 @@
 
 - **R2.1** Airport management — single ADB airport with 3 terminals, 13 units (seed data)
 - **R2.2** Area hierarchy — terminal > floor > zone > unit with self-referential tree
-- **R2.3** Tenant management — CRUD with status lifecycle (active/suspended/deactivated)
-- **R2.4** Service definition — 4 types: rent, revenue_share, service_charge, utility
-- **R2.5** Service versioning — draft → published → deprecated lifecycle
-- **R2.6** Billing policy — cut-off day, issue day, due date days, fiscal year config
+- [x] **R2.3** Tenant management — CRUD with status lifecycle (active/suspended/deactivated)
+- [x] **R2.4** Service definition — 4 types: rent, revenue_share, service_charge, utility
+- [x] **R2.5** Service versioning — draft → published → deprecated lifecycle
+- [x] **R2.6** Billing policy — cut-off day, issue day, due date days, fiscal year config
 
 ### R3: Formula Engine
 
@@ -35,8 +35,8 @@
 - **R3.2** Expression validation on save (AST traversal, reject assignments/function definitions)
 - **R3.3** Variable substitution from contract context (area_m2, rate_per_m2, revenue, index_rate, etc.)
 - **R3.4** Timeout protection (100ms max execution)
-- **R3.5** Formula versioning — immutable once used in obligation calculation
-- **R3.6** Dry-run evaluation with sample data before formula publish
+- [x] **R3.5** Formula versioning — immutable once used in obligation calculation
+- [x] **R3.6** Dry-run evaluation with sample data before formula publish
 
 ### R4: Contract Management
 

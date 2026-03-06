@@ -14,12 +14,12 @@ This roadmap delivers a demo-ready SaaS platform for airport commercial revenue 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Infrastructure** - Monorepo setup, Docker, database schema, auth, audit trail
-- [ ] **Phase 2: Master Data & Formula Engine** - Airport/area/tenant/service management with formula sandbox
-- [ ] **Phase 3: Contract Domain** - Contract lifecycle, versioning, service assignment, obligation trigger
-- [ ] **Phase 4: Obligation & Declaration** - Obligation scheduling, revenue/utility inputs, MAG settlement
+- [x] **Phase 2: Master Data & Formula Engine** - Airport/area/tenant/service management with formula sandbox (completed 2026-03-05)
+- [x] **Phase 3: Contract Domain** - Contract lifecycle, versioning, service assignment, obligation trigger (completed 2026-03-05)
+- [x] **Phase 4: Obligation & Declaration** - Obligation scheduling, revenue/utility inputs, MAG settlement (completed 2026-03-05)
 - [ ] **Phase 5: Billing & Invoice** - BullMQ orchestration, Stripe integration, webhooks, notifications
-- [ ] **Phase 6: Multi-Currency & Reporting** - Exchange rates, reporting dashboard, audit trail UI
-- [ ] **Phase 7: Admin Portal** - React frontend for contract management, billing operations, invoice tracking
+- [x] **Phase 6: Multi-Currency & Reporting** - Exchange rates, reporting dashboard, audit trail UI
+- [x] **Phase 7: Admin Portal** - React frontend for contract management, billing operations, invoice tracking (completed 2026-03-06)
 
 ## Phase Details
 
@@ -72,10 +72,10 @@ Plans:
 
 Plans:
 
-- [ ] 02-01-PLAN.md — Formula engine TDD: math.js whitelist sandbox, AST security validation, timeout-protected evaluation, step-band pricing
-- [ ] 02-02-PLAN.md — Airport CRUD + Area hierarchy CRUD with tree queries + ADB seed data extension (3 terminals, 13+ units)
-- [ ] 02-03-PLAN.md — Tenant CRUD with auto-generated sequential codes (TNT-001), Stripe customer creation, and status lifecycle
-- [ ] 02-04-PLAN.md — Service Definition CRUD with versioning + Formula CRUD with dry-run + Billing Policy + seed data (12 formulas, 8 services)
+- [x] 02-01-PLAN.md — Formula engine TDD: math.js whitelist sandbox, AST security validation, timeout-protected evaluation, step-band pricing
+- [x] 02-02-PLAN.md — Airport CRUD + Area hierarchy CRUD with tree queries + ADB seed data extension (3 terminals, 13+ units)
+- [x] 02-03-PLAN.md — Tenant CRUD with auto-generated sequential codes (TNT-001), Stripe customer creation, and status lifecycle
+- [x] 02-04-PLAN.md — Service Definition CRUD with versioning + Formula CRUD with dry-run + Billing Policy + seed data (12 formulas, 8 services)
 
 **Research Flags**:
 
@@ -91,7 +91,7 @@ Plans:
 
 **Success Criteria** (what must be TRUE):
 
-1. User can create contracts in draft state, assign tenant, areas, services, and transition through state machine (draft → in_review → published → active → amended/suspended/terminated)
+1. User can create contracts in draft state, assign tenant, areas, services, and transition through state machine (draft -> in_review -> published -> active -> amended/suspended/terminated)
 2. Publishing a contract automatically generates obligation schedule for all assigned services (triggered by ContractPublished event)
 3. User can amend active contracts with effective date = next full period start only (no mid-month changes)
 4. Amendments create new contract version and archive previous version with full history
@@ -99,12 +99,14 @@ Plans:
 6. Daily cron job transitions published contracts to active when signed_at + effective_from date is reached
 7. Contract snapshot (JSONB) is frozen at billing run start, ensuring deterministic billing regardless of later edits
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [x] 03-01-PLAN.md — Contract CRUD + state machine transitions + amendment versioning with pending_amendment status + snapshot helper
+- [x] 03-02-PLAN.md — Contract-Area assignment + Contract-Service assignment with formula override validation
+- [x] 03-03-PLAN.md — Obligation schedule generation on contract publish (event-driven) + read-only obligation endpoints + AppModule wiring
+- [x] 03-04-PLAN.md — Daily cron scheduler (published->active + amendment flip) + tenant suspension cascade + contract seed data
 
 ### Phase 4: Obligation & Declaration
 
@@ -116,7 +118,7 @@ Plans:
 
 **Success Criteria** (what must be TRUE):
 
-1. Obligations transition through 9 states (scheduled → pending_input → pending_calculation → ready → invoiced → settled → skipped → on_hold → cancelled) with state validation
+1. Obligations transition through 9 states (scheduled -> pending_input -> pending_calculation -> ready -> invoiced -> settled -> skipped -> on_hold -> cancelled) with state validation
 2. User can upload revenue declarations via CSV/Excel with 6 validation rules (negative amount, deviation threshold, duplicate period, missing fields, invalid tenant, invalid period)
 3. User can submit meter readings manually, and system calculates consumption (current - previous) and applies rate-based formula
 4. Formula evaluation produces calculated amount with full trace (JSONB: formula + inputs + result) stored in obligation record
@@ -125,13 +127,14 @@ Plans:
 7. Proration applies to first obligation when contract starts mid-period (daily proration based on period length)
 8. line_hash (SHA256) unique constraint prevents duplicate obligations for same tenant/period/charge_type
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [x] 04-01-PLAN.md — Obligation 9-state machine + lineHash SHA256 deduplication + proration helper + schema migration (nullable serviceDefinitionId)
+- [x] 04-02-PLAN.md — Declaration CRUD with 5-state machine + freeze token + CSV/Excel bulk upload with 6 validation rules + attachment upload
+- [x] 04-03-PLAN.md — Formula evaluation with trace + auto-ready/auto-skip + meter reading submission + consumption calculation
+- [x] 04-04-PLAN.md — MAG monthly settlement + year-end true-up + SettlementEntry records + AppModule wiring + demo seed data
 
 **Research Flags**:
 
@@ -148,7 +151,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
 
 1. User can trigger billing run for single tenant or multiple tenants, and run executes asynchronously via BullMQ queue
-2. Billing run transitions through 10 states (initiated → scoping → calculating → draft_ready → approved → rejected → invoicing → completed → partial → cancelled)
+2. Billing run transitions through 10 states (initiated -> scoping -> calculating -> draft_ready -> approved -> rejected -> invoicing -> completed -> partial -> cancelled)
 3. User can cancel specific tenants from in-progress run without affecting other tenants (partial cancel)
 4. Re-running cancelled billing run performs full rerun; re-running completed run processes delta only (new/changed obligations)
 5. Concurrency rule enforced: max 1 active billing run per airport + period combination
@@ -158,13 +161,14 @@ Plans:
 9. Bull Board queue monitoring UI accessible at /admin/queues showing job status, failures, retries
 10. SSE (Server-Sent Events) provides real-time progress updates to admin UI during billing run execution
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: TBD
+- [ ] 05-01-PLAN.md — BullMQ billing orchestrator + 10-state machine + concurrency rule + contract snapshot + Bull Board at /admin/queues
+- [ ] 05-02-PLAN.md — SSE progress streaming + partial tenant cancel + re-run (full/delta mode)
+- [ ] 05-03-PLAN.md — Stripe invoice provider (3-step flow) + InvoiceProvider interface + webhook handler with event deduplication
+- [ ] 05-04-PLAN.md — Email notifications (7 Turkish templates) + in-app SSE push + notification bell + event listener wiring + seed data
 
 **Research Flags**:
 
@@ -188,12 +192,13 @@ Plans:
 6. Reports available for revenue by tenant, revenue by service type, billing history, and audit trail with full entity change logs
 7. Stripe handles multi-currency invoicing natively with currency specified per invoice
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [x] 06-01-PLAN.md — ExchangeRate Prisma model + CRUD endpoints + rate lookup service + currency conversion helper
+- [x] 06-02-PLAN.md — Enhanced audit trail with entity timeline drill-down, field-level diffs, obligation trace + contract summary enrichment
+- [x] 06-03-PLAN.md — ReportsModule with dashboard KPIs, revenue summary (by tenant + service type), aging report (30/60/90), currency conversion display
 
 ### Phase 7: Admin Portal
 
@@ -214,25 +219,25 @@ Plans:
 7. Responsive design works on desktop (1920x1080 primary, 1366x768 minimum) with consistent Shadcn/ui theming
 8. Role-based access control enforces separation of duties (contract creator cannot approve own contracts, auditor is read-only)
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
-- [ ] 07-03: TBD
+- [ ] 07-01-PLAN.md — Shadcn/ui + Tailwind v4 install, Zustand auth store, Axios client, login page, AppShell layout with role-aware sidebar, shared components (DataTable, StatusBadge, ConfirmDialog, PageHeader), routing with protected routes
+- [ ] 07-02-PLAN.md — Contract management (list + detail + form with state transitions), Tenant management (list + form with status lifecycle), Formula builder (expression editor + dry-run preview), Service list, Billing operations (trigger + SSE progress + approve/reject)
+- [ ] 07-03-PLAN.md — Invoice list with Stripe URL links, Dashboard with KPI cards + revenue chart + aging report, Settings page (billing policy + user management + airport config), responsive design verification
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
-| Phase                           | Plans Complete | Status      | Completed |
-| ------------------------------- | -------------- | ----------- | --------- |
+| Phase                           | Plans Complete | Status      | Completed  |
+| ------------------------------- | -------------- | ----------- | ---------- |
 | 1. Foundation & Infrastructure  | 4/4            | Complete    | 2026-03-01 |
-| 2. Master Data & Formula Engine | 0/4            | Not started | -         |
-| 3. Contract Domain              | 0/TBD          | Not started | -         |
-| 4. Obligation & Declaration     | 0/TBD          | Not started | -         |
-| 5. Billing & Invoice            | 0/TBD          | Not started | -         |
-| 6. Multi-Currency & Reporting   | 0/TBD          | Not started | -         |
-| 7. Admin Portal                 | 0/TBD          | Not started | -         |
+| 2. Master Data & Formula Engine | 4/4            | Complete    | 2026-03-05 |
+| 3. Contract Domain              | 4/4            | Complete    | 2026-03-05 |
+| 4. Obligation & Declaration     | 4/4            | Complete    | 2026-03-05 |
+| 5. Billing & Invoice            | 0/4            | Not started | -          |
+| 6. Multi-Currency & Reporting   | 0/3            | Not started | -          |
+| 7. Admin Portal                 | 0/3            | Complete    | 2026-03-06 |
